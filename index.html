@@ -93,8 +93,10 @@
   .status-pill.approved{background:var(--ok-soft); color:var(--ok)}
 
   /* ---------- Colorbar (above hero) ---------- */
-  .colorbar{width:100vw; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw); line-height:0; overflow:hidden}
-  .colorbar img{width:100%; height:6px; object-fit:cover; display:block}
+  .colorbar{
+    width:100vw; height:6px; margin-left:calc(50% - 50vw); margin-right:calc(50% - 50vw);
+    background:linear-gradient(to right, #bc2135 0%, #e63428 12%, #e74e42 28%, #aabed0 40%, #88c7cb 50%, #85c9cb 58%, #76a4d7 68%, #26428f 80%, #2a3470 92%, #1f2a5c 100%);
+  }
 
   /* ---------- Account dropdown ---------- */
   .acct-wrap{position:relative}
@@ -413,7 +415,7 @@
       </a>
       <div class="header-actions" id="headerActions"></div>
     </div>
-    <div class="colorbar"><img src="https://www.kginternational.com/wp-content/uploads/elementor/thumbs/MicrosoftTeams-image-5-r69ttcvzm63is6gmjrrbxk803umxdawfslgqucr4c2.png" alt="" /></div>
+    <div class="colorbar"></div>
   </header>
 
   <!-- ============ GUEST HERO (guest mode only) ============ -->
