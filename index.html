@@ -77,7 +77,7 @@
   .brand .word{display:flex; flex-direction:column; min-width:0; line-height:1.15}
   .brand .word .b1{font-weight:800; font-size:15px; color:var(--navy); letter-spacing:.01em; white-space:nowrap}
   .brand .word .b2{font-size:11px; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-  .header-actions{display:flex; align-items:center; gap:10px; flex:none}
+  .header-actions{display:flex; align-items:center; gap:10px; flex:none; flex-wrap:wrap; justify-content:flex-end}
 
   .acct-pill{display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:5px 12px 5px 5px}
   .acct-avatar{width:26px; height:26px; border-radius:50%; background:var(--navy); color:#fff; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; flex:none}
@@ -145,102 +145,52 @@
   .btn:not(:disabled):hover{filter:brightness(1.06)}
   .btn.block{width:100%; text-align:center}
 
-  /* ---------- Hero (guest) ---------- */
-  .hero{
-    position:relative;
-    color:#fff;
+  /* ---------- Landing (home view) ---------- */
+  .landing-hero{
+    position:relative; color:#fff; overflow:hidden;
     background-color:#071740;
     background-image:
-      linear-gradient(135deg, rgba(7, 23, 64, 0.94) 0%, rgba(11, 31, 82, 0.88) 50%, rgba(0, 52, 115, 0.82) 100%),
-      url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=2000&q=80');
-    background-size:cover;
-    background-position:center 45%;
-    background-repeat:no-repeat;
-    overflow:hidden;
-    border-bottom:1px solid rgba(255,255,255,0.12);
+      radial-gradient(ellipse 70% 70% at 82% 15%, rgba(47,159,214,.30), transparent 60%),
+      radial-gradient(ellipse 60% 60% at 8% 100%, rgba(181,25,25,.22), transparent 55%),
+      linear-gradient(135deg, #071740 0%, #0b1f52 55%, #003473 100%);
+    border-bottom:1px solid rgba(255,255,255,.12);
   }
-  .hero::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:radial-gradient(ellipse 70% 60% at 80% 50%, rgba(47, 159, 214, 0.22), transparent 75%),
-               radial-gradient(circle at 10% 20%, rgba(181, 25, 25, 0.16), transparent 50%);
-    pointer-events:none;
+  .landing-hero-inner{
+    position:relative; z-index:1; padding-block:72px 112px;
+    display:flex; flex-direction:column; align-items:center; gap:16px; text-align:center;
+    max-width:760px; margin:0 auto;
   }
-  .hero::after{
-    content:"";
-    position:absolute;
-    right:-100px;
-    bottom:-100px;
-    width:500px;
-    height:500px;
-    border-radius:50%;
-    background:radial-gradient(circle, rgba(58,181,232,0.25), transparent 70%);
-    pointer-events:none;
+  .landing-eyebrow{
+    font-size:11.5px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--sky); background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.18);
+    padding:6px 16px; border-radius:999px;
   }
-  .hero-container{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:40px;
-    position:relative;
-    z-index:1;
+  .landing-hero h1{ font-size:clamp(28px,4.2vw,44px); font-weight:700; line-height:1.18; letter-spacing:-.015em }
+  .landing-hero p{ color:#cfdcf2; font-size:15.5px; line-height:1.65; max-width:62ch; margin:0 }
+
+  .landing-cards-grid{
+    display:grid; grid-template-columns:repeat(2,1fr); gap:24px;
+    margin-top:-72px; position:relative; z-index:2; padding-bottom:40px;
   }
-  .hero-inner{
-    position:relative;
-    padding-block:54px 58px;
-    display:flex;
-    flex-direction:column;
-    gap:16px;
-    max-width:760px;
+  @media (max-width:860px){ .landing-cards-grid{grid-template-columns:1fr; margin-top:-56px} }
+  .landing-card{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg);
+    padding:30px; display:flex; flex-direction:column; gap:12px; text-align:left; cursor:pointer;
+    box-shadow:0 24px 54px -28px rgba(11,31,82,.35); transition:transform .15s ease, box-shadow .15s ease;
   }
-  .hero h1{
-    font-size:clamp(26px,3.8vw,40px);
-    font-weight:600;
-    color:#fff;
-    line-height:1.22;
-    letter-spacing:-0.015em;
-  }
-  .hero p{
-    color:#dbe6f8;
-    font-size:15px;
-    line-height:1.65;
-    max-width:66ch;
-    margin:0;
-  }
-  .hero .cta-row{
-    display:flex;
-    gap:12px;
-    flex-wrap:wrap;
-    margin-top:6px;
-  }
-  .hero .btn{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    padding:11px 22px;
-    font-size:14px;
-    font-weight:600;
-    border-radius:10px;
-    box-shadow:0 4px 16px rgba(0,0,0,0.25);
-    transition:transform .15s ease, filter .15s ease, background .15s ease;
-  }
-  .hero .btn:hover{
-    transform:translateY(-1px);
-    filter:brightness(1.08);
-  }
-  .btn.on-hero-outline{
-    background:rgba(255,255,255,0.12);
-    border-color:rgba(255,255,255,0.45);
-    color:#fff;
-  }
-  .btn.on-hero-outline:hover{
-    background:rgba(255,255,255,0.2);
-    border-color:#fff;
-  }
-  @media (max-width:980px){
-    .hero-inner{padding-block:40px 44px}
-  }
+  .landing-card:hover, .landing-card:focus-visible{ transform:translateY(-4px); box-shadow:0 30px 64px -26px rgba(11,31,82,.42) }
+  .landing-card-icon{ width:48px; height:48px; border-radius:14px; display:flex; align-items:center; justify-content:center }
+  .landing-card-icon svg{ width:23px; height:23px }
+  .landing-card-icon.sky{ background:var(--sky-soft); color:var(--sky) }
+  .landing-card-icon.navy{ background:var(--navy-soft); color:var(--navy-2) }
+  .landing-card-eyebrow{ font-size:11px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--muted) }
+  .landing-card h2{ font-size:22px; font-weight:700 }
+  .landing-card p{ color:var(--muted); font-size:13.5px; line-height:1.55 }
+  .landing-card-list{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:7px; font-size:12.5px }
+  .landing-card-list li{ display:flex; gap:8px; align-items:flex-start }
+  .landing-card-list li::before{ content:"✓"; color:var(--ok); font-weight:700; flex:none }
+  .landing-card .btn{ margin-top:auto; align-self:flex-start }
+  @media (max-width:980px){ .landing-hero-inner{padding-block:56px 92px} }
 
   /* ---------- Workspace layout ---------- */
   .workspace{display:grid; grid-template-columns: minmax(0,1fr) 340px; gap:22px; padding-block:22px 48px; align-items:start}
@@ -248,12 +198,14 @@
   .side-sticky{position:sticky; top:84px; display:flex; flex-direction:column; gap:14px}
   @media (max-width:980px){ .side-sticky{position:static} }
 
-  /* ---------- Tool switcher ---------- */
-  .tool-tabs{display:flex; gap:8px; margin-top:22px; margin-bottom:0}
-  .tool-tab{display:flex; align-items:center; gap:8px; padding:12px 18px; border-radius:var(--radius-md) var(--radius-md) 0 0; border:1px solid var(--border); border-bottom:none; background:var(--surface-2); color:var(--muted); font-family:var(--font-body); font-size:13.5px; font-weight:600; cursor:pointer}
-  .tool-tab svg{width:16px; height:16px; flex:none}
-  .tool-tab.active{background:var(--surface); color:var(--navy-2); box-shadow:0 -2px 0 var(--navy-2) inset}
-  .tool-tab:not(.active):hover{background:var(--surface-3)}
+  /* ---------- Header nav (Home link + compact tool switcher) ---------- */
+  .hdr-nav{display:flex; align-items:center; gap:12px}
+  .hdr-link{display:flex; align-items:center; gap:6px; background:none; border:none; color:var(--muted); font-family:var(--font-body); font-size:13px; font-weight:600; cursor:pointer; padding:6px 2px}
+  .hdr-link svg{width:14px; height:14px}
+  .hdr-link:hover{color:var(--navy-2)}
+  .hdr-switch{display:flex; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px}
+  .hdr-switch-btn{background:none; border:none; border-radius:999px; padding:6px 13px; font-size:12.5px; font-weight:600; color:var(--muted); cursor:pointer; font-family:var(--font-body); white-space:nowrap}
+  .hdr-switch-btn.on{background:var(--navy); color:#fff}
 
   /* ---------- Grease Selector ---------- */
   .sel-section{display:flex; flex-direction:column; gap:10px; margin-top:18px; padding-top:18px; border-top:1px solid var(--border)}
@@ -458,40 +410,44 @@
     <div class="colorbar"></div>
   </header>
 
-  <!-- ============ GUEST HERO (guest mode only) ============ -->
-  <section class="hero shell-pad" id="heroGuest" hidden>
-    <div class="container hero-container">
-      <div class="hero-inner">
-        <h1>Precision Bearing Grease Fill &amp; Relubrication Calculator</h1>
-        <p>Eliminate guesswork in rolling bearing lubrication. Accurately calculate initial bearing fill mass, housing cavity quantities, and relubrication intervals based on SKF engineering standards — protecting equipment, preventing premature failures, and maximizing bearing service life.</p>
-        <div class="cta-row">
-          <button type="button" class="btn primary" id="heroCtaStart">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
-            Start calculating free
-          </button>
-          <button type="button" class="btn on-hero-outline" id="heroCtaSample">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-            See a sample report
-          </button>
-        </div>
-      </div>
-
+  <!-- ============ LANDING HERO (home view, guest + app modes) ============ -->
+  <section class="shell-pad landing-hero" id="landingHero" hidden>
+    <div class="container landing-hero-inner">
+      <span class="landing-eyebrow">KG International · Lubrication Engineering</span>
+      <h1>Two tools. One standard of precision.</h1>
+      <p>Pick the right grease for the job, then calculate exactly how much of it to use — built on SKF engineering standards, for teams who can't afford to guess.</p>
     </div>
   </section>
 
   <main class="shell-pad" style="flex:1">
     <div class="container">
 
-      <!-- ============ Tool switcher (shared by guest + app modes) ============ -->
-      <div class="tool-tabs" id="toolTabs">
-        <button type="button" class="tool-tab" data-tool="calculator">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="12" y1="16" x2="12.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg>
-          Grease Calculator
-        </button>
-        <button type="button" class="tool-tab" data-tool="selector">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-          Grease Selector
-        </button>
+      <!-- ============ LANDING CARDS (home view, guest + app modes) ============ -->
+      <div class="landing-cards-grid" id="landingCards" hidden>
+        <article class="landing-card" id="cardSelector" tabindex="0" role="button">
+          <div class="landing-card-icon sky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <span class="landing-card-eyebrow">Grease Selector</span>
+          <h2>Find the right grease</h2>
+          <p>Answer a few questions about load, speed, temperature and environment — get ranked grease recommendations scored against your operating conditions.</p>
+          <ul class="landing-card-list">
+            <li>Scored match across six operating criteria</li>
+            <li>Premium &amp; mid-range picks side by side</li>
+            <li>Relubrication interval estimate</li>
+          </ul>
+          <button type="button" class="btn primary" id="cardSelectorCta">Open Grease Selector →</button>
+        </article>
+        <article class="landing-card" id="cardCalculator" tabindex="0" role="button">
+          <div class="landing-card-icon navy"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="12" x2="8.01" y2="12"/><line x1="12" y1="12" x2="12.01" y2="12"/><line x1="16" y1="12" x2="16.01" y2="12"/><line x1="8" y1="16" x2="8.01" y2="16"/><line x1="12" y1="16" x2="12.01" y2="16"/><line x1="16" y1="16" x2="16.01" y2="16"/></svg></div>
+          <span class="landing-card-eyebrow">Grease Calculator</span>
+          <h2>Calculate fill quantities</h2>
+          <p>Enter a bearing designation and housing details to get exact initial fill mass, housing grease quantities and relubrication amounts.</p>
+          <ul class="landing-card-list">
+            <li>SKF free-volume formula</li>
+            <li>Housing &amp; relubrication quantities</li>
+            <li>Branded PDF report</li>
+          </ul>
+          <button type="button" class="btn primary" id="cardCalculatorCta">Open Grease Calculator →</button>
+        </article>
       </div>
 
       <!-- ============ WIZARD (shared by guest + app modes) ============ -->
@@ -1125,7 +1081,7 @@
   var state = {
     bearing: null, method: "SKF general formula", results: null,
     currentStep: 1, maxStepReached: 1, returnStep: 2,
-    account: null, mode: "guest", warnShown: false, tool: "calculator"
+    account: null, mode: "guest", warnShown: false, tool: "calculator", view: "home"
   };
 
   var selState = {
@@ -2086,6 +2042,7 @@
 
   document.getElementById("pendingContinueBtn").addEventListener("click", function(){
     state.tool = state.returnTool || "calculator";
+    state.view = "tool";
     location.hash = "app";
     requestAnimationFrame(function(){
       if (state.tool === "selector") advanceSel(Math.max(state.returnStep, 1));
@@ -2338,6 +2295,24 @@
     if (!e.target.closest(".acct-wrap")){ var m = document.getElementById("acctMenu"); if (m) m.hidden = true; }
   });
 
+  function navHtml(){
+    if (!((state.mode === "guest" || state.mode === "app") && state.view === "tool")) return "";
+    return '<div class="hdr-nav">' +
+      '<button type="button" class="hdr-link" id="hdrHome"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Home</button>' +
+      '<div class="hdr-switch">' +
+        '<button type="button" class="hdr-switch-btn' + (state.tool === "selector" ? " on" : "") + '" data-switch-tool="selector">Selector</button>' +
+        '<button type="button" class="hdr-switch-btn' + (state.tool === "calculator" ? " on" : "") + '" data-switch-tool="calculator">Calculator</button>' +
+      '</div>' +
+    '</div>';
+  }
+  function wireNav(){
+    var home = document.getElementById("hdrHome");
+    if (home) home.addEventListener("click", goHome);
+    document.querySelectorAll("[data-switch-tool]").forEach(function(btn){
+      btn.addEventListener("click", function(){ enterTool(btn.getAttribute("data-switch-tool")); });
+    });
+  }
+
   function renderHeader(){
     var box = document.getElementById("headerActions");
     if (state.mode === "admin"){
@@ -2347,7 +2322,7 @@
     }
     if (state.account){
       var pending = isPendingAccount(state.account);
-      box.innerHTML =
+      box.innerHTML = navHtml() +
         '<div class="acct-wrap">' +
           '<div class="acct-pill" id="acctTrigger"><div class="acct-avatar">' + escapeHtml(initials(state.account.name) || "U") + '</div>' +
           '<div class="acct-meta"><b>' + escapeHtml(state.account.name) + '</b><span>' + (pending ? '<span class="status-pill pending">Pending</span>' : escapeHtml(state.account.company || "")) + '</span></div></div>' +
@@ -2362,9 +2337,11 @@
       document.getElementById("menuAcctDetails").addEventListener("click", function(){ document.getElementById("acctMenu").hidden = true; openAcctDetailsModal(); });
       document.getElementById("menuPastReports").addEventListener("click", function(){ document.getElementById("acctMenu").hidden = true; openPastReportsModal(); });
       document.getElementById("hdrSignOut").addEventListener("click", function(){ clearAccount(); location.hash = "guest"; });
+      wireNav();
     } else {
-      box.innerHTML = '<button type="button" class="btn primary sm" id="hdrCreate">Create free account</button>';
+      box.innerHTML = navHtml() + '<button type="button" class="btn primary sm" id="hdrCreate">Create free account</button>';
       document.getElementById("hdrCreate").addEventListener("click", function(){ state.returnStep = 2; state.returnTool = state.tool; location.hash = "signup"; });
+      wireNav();
     }
   }
 
@@ -2376,21 +2353,22 @@
     state.mode = m;
     document.getElementById("presenterMode").textContent = m;
     var showsTools = (m === "guest" || m === "app");
+    var showHome = showsTools && state.view === "home";
+    var showTool = showsTools && state.view === "tool";
 
-    document.getElementById("heroGuest").hidden = (m !== "guest");
-    document.getElementById("toolTabs").hidden = !showsTools;
-    document.getElementById("wizardArea").hidden = !(showsTools && state.tool === "calculator");
-    document.getElementById("selectorArea").hidden = !(showsTools && state.tool === "selector");
+    document.getElementById("landingHero").hidden = !showHome;
+    document.getElementById("landingCards").hidden = !showHome;
+    document.getElementById("wizardArea").hidden = !(showTool && state.tool === "calculator");
+    document.getElementById("selectorArea").hidden = !(showTool && state.tool === "selector");
     document.getElementById("signupArea").hidden = (m !== "signup");
     document.getElementById("pendingArea").hidden = (m !== "pending");
     document.getElementById("adminArea").hidden = (m !== "admin");
-    document.getElementById("referenceField").hidden = !(m === "app" && state.tool === "calculator");
+    document.getElementById("referenceField").hidden = !(m === "app" && showTool && state.tool === "calculator");
 
-    renderToolTabs();
     applyLockVisuals();
     applySelectorLockVisuals();
-    if (showsTools && state.tool === "calculator") goToStep(state.currentStep || 1);
-    if (showsTools && state.tool === "selector") goToSelStep(selState.currentStep || 1);
+    if (showTool && state.tool === "calculator") goToStep(state.currentStep || 1);
+    if (showTool && state.tool === "selector") goToSelStep(selState.currentStep || 1);
     if (m === "admin") renderAdmin();
     if (m === "app" && isPendingAccount(state.account)){ refreshApprovalStatus(); watchApprovalInDb(); }
     renderHeader();
@@ -2399,16 +2377,22 @@
     window.scrollTo({ top: 0 });
   }
 
-  function renderToolTabs(){
-    document.querySelectorAll(".tool-tab").forEach(function(tab){
-      tab.classList.toggle("active", tab.getAttribute("data-tool") === state.tool);
-    });
+  function enterTool(tool){
+    state.tool = tool;
+    state.view = "tool";
+    if (state.mode === "guest" || state.mode === "app") setMode(state.mode);
+    else location.hash = state.account ? "app" : "guest";
   }
-  document.getElementById("toolTabs").addEventListener("click", function(e){
-    var tab = e.target.closest(".tool-tab");
-    if (!tab) return;
-    state.tool = tab.getAttribute("data-tool");
+  function goHome(){
+    state.view = "home";
     setMode(state.mode);
+  }
+  document.getElementById("cardSelectorCta").addEventListener("click", function(e){ e.stopPropagation(); enterTool("selector"); });
+  document.getElementById("cardCalculatorCta").addEventListener("click", function(e){ e.stopPropagation(); enterTool("calculator"); });
+  document.getElementById("cardSelector").addEventListener("click", function(){ enterTool("selector"); });
+  document.getElementById("cardCalculator").addEventListener("click", function(){ enterTool("calculator"); });
+  [document.getElementById("cardSelector"), document.getElementById("cardCalculator")].forEach(function(card){
+    card.addEventListener("keydown", function(e){ if (e.key === "Enter" || e.key === " "){ e.preventDefault(); card.click(); } });
   });
 
   function routeFromHash(){
@@ -2417,15 +2401,6 @@
     setMode(h);
   }
   window.addEventListener("hashchange", routeFromHash);
-
-  document.getElementById("heroCtaStart").addEventListener("click", function(){
-    if (state.tool === "selector"){ document.getElementById("sel-step-1").scrollIntoView({ behavior: "smooth" }); selInput.focus(); }
-    else { document.getElementById("step-1").scrollIntoView({ behavior: "smooth" }); input.focus(); }
-  });
-  document.getElementById("heroCtaSample").addEventListener("click", function(){
-    var id = state.tool === "selector" ? "sel-step-2" : "step-2";
-    document.getElementById(id).scrollIntoView({ behavior: "smooth" });
-  });
 
   // ---------- Presenter / demo switcher ----------
   var presenterToggle = document.getElementById("presenterToggle");
