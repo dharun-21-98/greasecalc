@@ -375,8 +375,7 @@
   .admin-metric{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px}
   .admin-metric .m-label{font-size:11.5px; color:var(--muted); font-weight:600}
   .admin-metric .m-value{font-family:var(--font-body); font-size:26px; font-weight:700; color:var(--navy-2); margin-top:4px}
-  .admin-tables{display:grid; grid-template-columns:1fr 1fr; gap:18px}
-  @media (max-width:980px){ .admin-tables{grid-template-columns:1fr} }
+  .admin-tables{display:grid; grid-template-columns:1fr; gap:18px}
   .table-wrap{overflow-x:auto}
   table.data-table{width:100%; border-collapse:collapse; font-size:12.5px; min-width:480px}
   table.data-table th{text-align:left; font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap}
@@ -384,6 +383,9 @@
   table.data-table tr:last-child td{border-bottom:none}
   .sample-tag{font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--warn); background:var(--warn-soft); border-radius:5px; padding:1px 6px; margin-left:6px}
   .admin-restricted{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:60px 20px; color:var(--muted)}
+  .row-actions{display:flex; align-items:center; gap:6px}
+  .btn.icon-btn-sm{width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; flex:none}
+  .icon-btn-sm svg{width:15px; height:15px; flex:none}
 
   /* ---------- Footer ---------- */
   footer.sitefoot{background:var(--navy); color:#cfdcf2; margin-top:auto}
@@ -741,7 +743,7 @@
           <div class="admin-tables">
             <div class="card">
               <h3 style="font-size:14px; font-weight:700; margin-bottom:10px">Signups</h3>
-              <div class="table-wrap"><table class="data-table" id="leadsTable"><thead><tr><th>Name</th><th>Company</th><th>Industry</th><th>Country</th><th>Email</th><th>Signed up</th><th>Status</th><th>Action</th></tr></thead><tbody></tbody></table></div>
+              <div class="table-wrap"><table class="data-table" id="leadsTable"><thead><tr><th>Name</th><th>Company</th><th>Signed up</th><th>Status</th><th>Actions</th></tr></thead><tbody></tbody></table></div>
             </div>
             <div class="card">
               <h3 style="font-size:14px; font-weight:700; margin-bottom:10px">PDF downloads</h3>
@@ -789,6 +791,19 @@
     <p class="modal-sub">Reports generated from this account.</p>
     <div id="pastReportsBody" style="margin-top:12px"></div>
     <div class="modal-actions"><button type="button" class="btn ghost" id="pastReportsClose">Close</button></div>
+  </div>
+</div>
+
+<!-- ============ Admin: signup detail modal ============ -->
+<div class="modal-mask" id="adminLeadModal" hidden>
+  <div class="modal-card">
+    <h3>Signup details</h3>
+    <p class="modal-sub">Everything this applicant submitted when they created their account.</p>
+    <div id="adminLeadBody" style="margin-top:12px"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="adminLeadClose">Close</button>
+      <button type="button" class="btn primary" id="adminLeadApprove" hidden>Approve profile</button>
+    </div>
   </div>
 </div>
 
@@ -1433,7 +1448,7 @@
 
   // ---------- Admin ----------
   var adminUnsubs = [];
-  function teardownAdmin(){ adminUnsubs.forEach(function(fn){ try{ fn(); }catch(e){} }); adminUnsubs = []; }
+  function teardownAdmin(){ adminUnsubs.forEach(function(fn){ try{ fn(); }catch(e){} }); adminUnsubs = []; closeModal("adminLeadModal"); }
 
   function renderAdmin(){
     var gate = document.getElementById("adminGate");
@@ -1446,6 +1461,8 @@
 
     function persistLeads(){ try { localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(leads)); } catch(e){} }
 
+    var modalLead = null;
+
     function approveLead(email, docId){
       leads.forEach(function(l){ if (l.email && l.email.toLowerCase() === email.toLowerCase()) l.status = "approved"; });
       persistLeads();
@@ -1457,21 +1474,53 @@
       }
     }
 
+    function renderLeadModal(lead){
+      var pending = lead.status === "pending";
+      var rows = [
+        ["Full name", lead.name], ["Work email", lead.email], ["Company / organization", lead.company],
+        ["Job title", lead.jobTitle], ["Phone", lead.phone], ["Country / region", lead.country],
+        ["Application / industry", lead.industry],
+        ["Signed up", lead.createdAt ? new Date(lead.createdAt).toLocaleString() : ""]
+      ];
+      var html = '<div class="detail-row"><span class="k">Status</span><span class="v"><span class="status-pill ' + (pending ? "pending" : "approved") + '">' + (pending ? "Pending verification" : "Approved") + '</span></span></div>';
+      rows.forEach(function(pair){
+        html += '<div class="detail-row"><span class="k">' + escapeHtml(pair[0]) + '</span><span class="v">' + escapeHtml(pair[1] || "—") + '</span></div>';
+      });
+      document.getElementById("adminLeadBody").innerHTML = html;
+      document.getElementById("adminLeadApprove").hidden = !pending;
+    }
+
     function renderTables(){
       var lb = document.querySelector("#leadsTable tbody");
       if (lb){
         lb.innerHTML = leads.map(function(l, idx){
           var pending = l.status === "pending";
           var statusCell = '<span class="status-pill ' + (pending ? "pending" : "approved") + '">' + (pending ? "Pending" : "Approved") + '</span>';
-          var actionCell = pending ? '<button type="button" class="btn sm" data-approve-idx="' + idx + '">Approve</button>' : '—';
-          return "<tr><td>" + escapeHtml(l.name||"") + (l.sample?'<span class="sample-tag">SAMPLE</span>':"") + "</td><td>" + escapeHtml(l.company||"") + "</td><td>" + escapeHtml(l.industry||"") + "</td><td>" + escapeHtml(l.country||"") + "</td><td>" + escapeHtml(l.email||"") + "</td><td>" + (l.createdAt ? new Date(l.createdAt).toLocaleDateString() : "") + "</td><td>" + statusCell + "</td><td>" + actionCell + "</td></tr>";
-        }).join("") || "<tr><td colspan=8 style='color:var(--muted)'>No signups yet.</td></tr>";
+          var actionCell = '<div class="row-actions">' +
+            '<button type="button" class="btn ghost sm icon-btn-sm" data-view-idx="' + idx + '" title="View details"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"/><circle cx="12" cy="12" r="3"/></svg></button>' +
+            (pending ? '<button type="button" class="btn sm" data-approve-idx="' + idx + '">Approve</button>' : '') +
+            '</div>';
+          return "<tr><td>" + escapeHtml(l.name||"") + (l.sample?'<span class="sample-tag">SAMPLE</span>':"") + "</td><td>" + escapeHtml(l.company||"") + "</td><td>" + (l.createdAt ? new Date(l.createdAt).toLocaleDateString() : "") + "</td><td>" + statusCell + "</td><td>" + actionCell + "</td></tr>";
+        }).join("") || "<tr><td colspan=5 style='color:var(--muted)'>No signups yet.</td></tr>";
         lb.querySelectorAll("[data-approve-idx]").forEach(function(btn){
           btn.addEventListener("click", function(){
             var lead = leads[parseInt(btn.getAttribute("data-approve-idx"), 10)];
             if (lead) approveLead(lead.email, lead._id);
           });
         });
+        lb.querySelectorAll("[data-view-idx]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var lead = leads[parseInt(btn.getAttribute("data-view-idx"), 10)];
+            if (!lead) return;
+            modalLead = lead;
+            renderLeadModal(lead);
+            openModal("adminLeadModal");
+          });
+        });
+        if (modalLead && !document.getElementById("adminLeadModal").hidden){
+          var fresh = leads.filter(function(l){ return l.email && modalLead.email && l.email.toLowerCase() === modalLead.email.toLowerCase(); })[0];
+          if (fresh){ modalLead = fresh; renderLeadModal(fresh); }
+        }
       }
 
       var db2 = document.querySelector("#downloadsTable tbody");
@@ -1497,6 +1546,7 @@
     }
 
     renderTables();
+    adminLeadApproveHandler = function(){ if (modalLead) approveLead(modalLead.email, modalLead._id); };
 
     if (typeof claude !== "undefined" && claude.use){
       claude.use("db").then(function(db){
@@ -1564,6 +1614,11 @@
   document.getElementById("pastReportsClose").addEventListener("click", function(){ closeModal("pastReportsModal"); });
   document.getElementById("acctDetailsModal").addEventListener("click", function(e){ if (e.target === this) closeModal("acctDetailsModal"); });
   document.getElementById("pastReportsModal").addEventListener("click", function(e){ if (e.target === this) closeModal("pastReportsModal"); });
+
+  var adminLeadApproveHandler = null;
+  document.getElementById("adminLeadClose").addEventListener("click", function(){ closeModal("adminLeadModal"); });
+  document.getElementById("adminLeadModal").addEventListener("click", function(e){ if (e.target === this) closeModal("adminLeadModal"); });
+  document.getElementById("adminLeadApprove").addEventListener("click", function(){ if (adminLeadApproveHandler) adminLeadApproveHandler(); });
   document.addEventListener("click", function(e){
     if (!e.target.closest(".acct-wrap")){ var m = document.getElementById("acctMenu"); if (m) m.hidden = true; }
   });
