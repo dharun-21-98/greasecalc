@@ -150,22 +150,6 @@
     gap:16px;
     max-width:760px;
   }
-  .hero-badge{
-    display:inline-flex;
-    align-items:center;
-    gap:8px;
-    width:fit-content;
-    background:rgba(255,255,255,0.15);
-    border:1px solid rgba(255,255,255,0.25);
-    border-radius:999px;
-    padding:6px 14px 6px 10px;
-    font-size:11.5px;
-    font-weight:600;
-    letter-spacing:.08em;
-    color:#e0edff;
-    text-transform:uppercase;
-  }
-  .hero-badge svg{width:15px; height:15px; color:var(--sky)}
   .hero h1{
     font-size:clamp(26px,3.8vw,40px);
     font-weight:600;
@@ -209,31 +193,6 @@
   .btn.on-hero-outline:hover{
     background:rgba(255,255,255,0.2);
     border-color:#fff;
-  }
-  .trust-strip{
-    display:flex;
-    gap:10px;
-    flex-wrap:wrap;
-    margin-top:10px;
-    padding-top:18px;
-    border-top:1px solid rgba(255,255,255,0.15);
-    font-size:12.5px;
-    color:#bcd3f5;
-  }
-  .trust-strip span{
-    display:flex;
-    align-items:center;
-    gap:7px;
-    background:rgba(255,255,255,0.1);
-    padding:5px 12px;
-    border-radius:6px;
-    border:1px solid rgba(255,255,255,0.15);
-  }
-  .trust-strip span svg{
-    width:14px;
-    height:14px;
-    color:var(--sky);
-    flex:none;
   }
   @media (max-width:980px){
     .hero-inner{padding-block:40px 44px}
@@ -423,10 +382,6 @@
   <section class="hero shell-pad" id="heroGuest" hidden>
     <div class="container hero-container">
       <div class="hero-inner">
-        <div class="hero-badge">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-          KG International &bull; Lubrication Engineering
-        </div>
         <h1>Precision Bearing Grease Fill &amp; Relubrication Calculator</h1>
         <p>Eliminate guesswork in rolling bearing lubrication. Accurately calculate initial bearing fill mass, housing cavity quantities, and relubrication intervals based on SKF engineering standards — protecting equipment, preventing premature failures, and maximizing bearing service life.</p>
         <div class="cta-row">
@@ -438,24 +393,6 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
             See a sample report
           </button>
-        </div>
-        <div class="trust-strip">
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            633 SKF standard bearing catalog
-          </span>
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Metallic &amp; non-metallic cage logic
-          </span>
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Instant PDF engineering reports
-          </span>
-          <span>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-            Zero spreadsheets needed
-          </span>
         </div>
       </div>
 
