@@ -1,0 +1,1443 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px 'Jost',Futura,Futura-Medium,'Segoe UI',Arial,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>KG Grease Fill Calculator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  /* Brand: KG International navy (#0b1f52) + sky accent (#3ab5e8) + red CTA (#b51919),
+     Jost type (Futura-like geometric sans), drawn from kginternational.com. Layout: full-width shell (header /
+     hero / two-column workspace / footer) — not a centered column — with a wide-screen
+     sidebar snapshot, collapsing to one column on phones. Four modes share one shell:
+     guest (preview + nudge), signup (lead form), app (full calculator), admin (dashboard). */
+  :root{
+    --bg:#f3f5f9; --surface:#ffffff; --surface-2:#eef1f6; --surface-3:#e4e9f0; --border:#dbe2ea;
+    --fg:#13203a; --muted:#5c6b80;
+    --navy:#0b1f52; --navy-2:#003473; --navy-soft:#e7edf8;
+    --sky:#2f9fd6; --sky-soft:#e3f3fb;
+    --red:#b51919; --red-dark:#8f1414; --red-fg:#ffffff;
+    --input-bg:#eef4fc; --input-border:#aecbe9;
+    --ok:#1b8a54; --ok-soft:#e4f5ea; --warn:#9c6500; --warn-soft:#fbf0dd;
+    --danger:#b7342f; --danger-soft:#faeaea;
+    --font-display:'Jost',Futura,Futura-Medium,'Segoe UI',Arial,sans-serif;
+    --font-body:'Jost',Futura,Futura-Medium,'Segoe UI',Arial,sans-serif;
+    --font-mono:'Jost',Futura,Futura-Medium,'Segoe UI',Arial,sans-serif;
+    --radius-lg:20px; --radius-md:12px;
+    color-scheme:light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0b0f16; --surface:#131a24; --surface-2:#19212d; --surface-3:#212a38; --border:#2a3344;
+      --fg:#e7edf6; --muted:#95a3b7;
+      --navy:#aecbf2; --navy-2:#7fb0e8; --navy-soft:#16233b;
+      --sky:#5fd0f5; --sky-soft:#112733;
+      --red:#e05a52; --red-dark:#b23a35; --red-fg:#0b0f16;
+      --input-bg:#152233; --input-border:#30547f;
+      --ok:#55c489; --ok-soft:#133224; --warn:#e3ac4a; --warn-soft:#352a14;
+      --danger:#e8716d; --danger-soft:#391f1e;
+      color-scheme:dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0b0f16; --surface:#131a24; --surface-2:#19212d; --surface-3:#212a38; --border:#2a3344;
+    --fg:#e7edf6; --muted:#95a3b7;
+    --navy:#aecbf2; --navy-2:#7fb0e8; --navy-soft:#16233b;
+    --sky:#5fd0f5; --sky-soft:#112733;
+    --red:#e05a52; --red-dark:#b23a35; --red-fg:#0b0f16;
+    --input-bg:#152233; --input-border:#30547f;
+    --ok:#55c489; --ok-soft:#133224; --warn:#e3ac4a; --warn-soft:#352a14;
+    --danger:#e8716d; --danger-soft:#391f1e;
+    color-scheme:dark;
+  }
+
+  *{box-sizing:border-box}
+  html,body{background:var(--bg)}
+  body{
+    color:var(--fg); font-family:var(--font-body); font-size:14px; line-height:1.5;
+    padding-left:max(0px, env(safe-area-inset-left,0px)); padding-right:max(0px, env(safe-area-inset-right,0px));
+  }
+  input, select, textarea, button{font-family:inherit}
+  h1,h2,h3{font-family:var(--font-display); text-wrap:balance; margin:0}
+  a{color:var(--navy-2)}
+  [hidden]{display:none!important}
+
+  .shell-pad{ padding-left:max(16px, env(safe-area-inset-left,0px)); padding-right:max(16px, env(safe-area-inset-right,0px)); }
+  .container{max-width:1320px; margin:0 auto; width:100%}
+
+  /* ---------- Header ---------- */
+  header.topbar{
+    position:sticky; top:0; z-index:30; background:var(--surface); border-bottom:1px solid var(--border);
+    padding-top:env(safe-area-inset-top,0px);
+  }
+  .topbar-inner{display:flex; align-items:center; justify-content:space-between; gap:14px; padding:12px 0; min-width:0}
+  .brand{display:flex; align-items:center; gap:10px; min-width:0; text-decoration:none; color:var(--fg)}
+  .brand img{width:34px; height:30px; flex:none}
+  .brand .word{display:flex; flex-direction:column; min-width:0; line-height:1.15}
+  .brand .word .b1{font-weight:800; font-size:15px; color:var(--navy); letter-spacing:.01em; white-space:nowrap}
+  .brand .word .b2{font-size:11px; color:var(--muted); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .header-actions{display:flex; align-items:center; gap:10px; flex:none}
+
+  .acct-pill{display:flex; align-items:center; gap:8px; background:var(--surface-2); border:1px solid var(--border); border-radius:999px; padding:5px 12px 5px 5px}
+  .acct-avatar{width:26px; height:26px; border-radius:50%; background:var(--navy); color:#fff; font-weight:700; font-size:11px; display:flex; align-items:center; justify-content:center; flex:none}
+  .acct-meta{display:flex; flex-direction:column; line-height:1.15; min-width:0}
+  .acct-meta b{font-size:12px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px}
+  .acct-meta span{font-size:10.5px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:160px}
+
+  .badge{font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; padding:3px 9px; border-radius:999px}
+  .badge.admin{background:var(--navy); color:#fff}
+
+  /* ---------- Buttons ---------- */
+  .btn{
+    font-family:var(--font-body); font-size:13.5px; font-weight:600; padding:9px 16px; border-radius:9px; cursor:pointer;
+    border:1px solid var(--border); background:var(--surface); color:var(--fg); white-space:nowrap;
+  }
+  .btn.primary{background:var(--red); color:var(--red-fg); border-color:var(--red)}
+  .btn.primary:disabled{opacity:.5; cursor:not-allowed}
+  .btn.outline-navy{background:transparent; border-color:var(--navy-2); color:var(--navy-2)}
+  .btn.ghost{background:none; border-color:transparent; color:var(--muted)}
+  .btn.sm{padding:6px 12px; font-size:12.5px}
+  .btn:not(:disabled):hover{filter:brightness(1.06)}
+  .btn.block{width:100%; text-align:center}
+
+  /* ---------- Hero (guest) ---------- */
+  .hero{
+    position:relative;
+    color:#fff;
+    background-color:#071740;
+    background-image:
+      linear-gradient(135deg, rgba(7, 23, 64, 0.94) 0%, rgba(11, 31, 82, 0.88) 50%, rgba(0, 52, 115, 0.82) 100%),
+      url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?auto=format&fit=crop&w=2000&q=80');
+    background-size:cover;
+    background-position:center 45%;
+    background-repeat:no-repeat;
+    overflow:hidden;
+    border-bottom:1px solid rgba(255,255,255,0.12);
+  }
+  .hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:radial-gradient(ellipse 70% 60% at 80% 50%, rgba(47, 159, 214, 0.22), transparent 75%),
+               radial-gradient(circle at 10% 20%, rgba(181, 25, 25, 0.16), transparent 50%);
+    pointer-events:none;
+  }
+  .hero::after{
+    content:"";
+    position:absolute;
+    right:-100px;
+    bottom:-100px;
+    width:500px;
+    height:500px;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(58,181,232,0.25), transparent 70%);
+    pointer-events:none;
+  }
+  .hero-container{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:40px;
+    position:relative;
+    z-index:1;
+  }
+  .hero-inner{
+    position:relative;
+    padding-block:54px 58px;
+    display:flex;
+    flex-direction:column;
+    gap:16px;
+    max-width:760px;
+  }
+  .hero-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    width:fit-content;
+    background:rgba(255,255,255,0.15);
+    border:1px solid rgba(255,255,255,0.25);
+    border-radius:999px;
+    padding:6px 14px 6px 10px;
+    font-size:11.5px;
+    font-weight:600;
+    letter-spacing:.08em;
+    color:#e0edff;
+    text-transform:uppercase;
+  }
+  .hero-badge svg{width:15px; height:15px; color:var(--sky)}
+  .hero h1{
+    font-size:clamp(26px,3.8vw,40px);
+    font-weight:600;
+    color:#fff;
+    line-height:1.22;
+    letter-spacing:-0.015em;
+  }
+  .hero p{
+    color:#dbe6f8;
+    font-size:15px;
+    line-height:1.65;
+    max-width:66ch;
+    margin:0;
+  }
+  .hero .cta-row{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin-top:6px;
+  }
+  .hero .btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:11px 22px;
+    font-size:14px;
+    font-weight:600;
+    border-radius:10px;
+    box-shadow:0 4px 16px rgba(0,0,0,0.25);
+    transition:transform .15s ease, filter .15s ease, background .15s ease;
+  }
+  .hero .btn:hover{
+    transform:translateY(-1px);
+    filter:brightness(1.08);
+  }
+  .btn.on-hero-outline{
+    background:rgba(255,255,255,0.12);
+    border-color:rgba(255,255,255,0.45);
+    color:#fff;
+  }
+  .btn.on-hero-outline:hover{
+    background:rgba(255,255,255,0.2);
+    border-color:#fff;
+  }
+  .trust-strip{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:10px;
+    padding-top:18px;
+    border-top:1px solid rgba(255,255,255,0.15);
+    font-size:12.5px;
+    color:#bcd3f5;
+  }
+  .trust-strip span{
+    display:flex;
+    align-items:center;
+    gap:7px;
+    background:rgba(255,255,255,0.1);
+    padding:5px 12px;
+    border-radius:6px;
+    border:1px solid rgba(255,255,255,0.15);
+  }
+  .trust-strip span svg{
+    width:14px;
+    height:14px;
+    color:var(--sky);
+    flex:none;
+  }
+  @media (max-width:980px){
+    .hero-inner{padding-block:40px 44px}
+  }
+
+  /* ---------- Workspace layout ---------- */
+  .workspace{display:grid; grid-template-columns: minmax(0,1fr) 340px; gap:22px; padding-block:22px 48px; align-items:start}
+  @media (max-width:980px){ .workspace{grid-template-columns:1fr} }
+  .side-sticky{position:sticky; top:84px; display:flex; flex-direction:column; gap:14px}
+  @media (max-width:980px){ .side-sticky{position:static} }
+
+  /* ---------- Stepper ---------- */
+  .stepper{display:flex; gap:0; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:10px 8px; overflow-x:auto}
+  .step-tab{flex:1 1 0; min-width:0; display:flex; flex-direction:column; align-items:center; gap:4px; padding:4px 6px; border:none; background:none; cursor:pointer; color:var(--muted); position:relative}
+  .step-tab:disabled{cursor:not-allowed; opacity:.55}
+  .step-tab .circle{width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--font-body); font-size:12px; font-weight:600; background:var(--surface-2); border:1px solid var(--border); color:var(--muted)}
+  .step-tab.done .circle{background:var(--ok-soft); color:var(--ok); border-color:var(--ok)}
+  .step-tab.active .circle{background:var(--navy); color:#fff; border-color:var(--navy)}
+  .step-tab.locked .circle{background:var(--surface-3); color:var(--muted)}
+  .step-tab .lbl{font-size:10.5px; font-weight:600; letter-spacing:.02em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%}
+  .step-tab.active .lbl{color:var(--navy)}
+  .step-track{position:absolute; top:16px; left:calc(50% + 14px); right:calc(-50% + 14px); height:2px; background:var(--border); z-index:-1}
+  .step-tab:first-child .step-track{display:none}
+  .step-tab.done .step-track, .step-tab.active .step-track{background:var(--navy)}
+
+  /* ---------- Cards ---------- */
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:20px 20px 22px; min-width:0}
+  .card-head{display:flex; align-items:baseline; gap:10px; margin-bottom:4px}
+  .card-head .num{font-family:var(--font-body); font-size:12px; font-weight:600; color:var(--navy-2); background:var(--navy-soft); border-radius:6px; padding:2px 7px}
+  .card-head h2{font-size:16px; font-weight:700}
+  .card-note{color:var(--muted); font-size:12.5px; margin:2px 0 14px}
+
+  .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 16px}
+  @media (max-width:560px){ .grid{grid-template-columns:1fr} }
+
+  .field{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .field label{font-size:12px; color:var(--muted); font-weight:600}
+  .field .req{color:var(--red)}
+  .field .unit-row{display:flex; align-items:center; gap:8px; min-width:0}
+  .field input[type=text], .field input[type=number], .field input[type=email], .field input[type=tel], .field select{
+    width:100%; font-family:var(--font-body); font-size:14px; color:var(--fg);
+    background:var(--input-bg); border:1px solid var(--input-border); border-radius:8px;
+    padding:9px 11px; outline:none;
+  }
+  .field input:focus, .field select:focus{border-color:var(--navy-2); box-shadow:0 0 0 3px var(--navy-soft)}
+  .field .unit{font-size:12px; color:var(--muted); font-family:var(--font-body); white-space:nowrap}
+  .field .hintline{font-size:11px; color:var(--muted)}
+  .checkline{display:flex; align-items:flex-start; gap:9px; font-size:12.5px; color:var(--muted)}
+  .checkline input{margin-top:3px; flex:none}
+
+  .readout{display:flex; flex-direction:column; gap:5px; min-width:0}
+  .readout label{font-size:12px; color:var(--muted); font-weight:600}
+  .readout .box{background:var(--surface-2); border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-family:var(--font-body); font-size:14px; font-weight:600; color:var(--fg); display:flex; justify-content:space-between; gap:8px; min-width:0}
+  .readout .box span.v{overflow:hidden; text-overflow:ellipsis}
+  .readout .box span.u{color:var(--muted); font-weight:500; font-size:12px; flex:none}
+
+  /* ---------- Bearing combobox ---------- */
+  .combo{position:relative}
+  .combo input{font-family:var(--font-body)}
+  .combo-list{position:absolute; left:0; right:0; top:calc(100% + 4px); z-index:20; background:var(--surface); border:1px solid var(--border); border-radius:10px; max-height:260px; overflow-y:auto; box-shadow:0 10px 24px -10px rgba(0,0,0,.35)}
+  .combo-row{display:flex; justify-content:space-between; gap:10px; padding:8px 12px; cursor:pointer; font-size:13px}
+  .combo-row .d{font-family:var(--font-body); font-weight:600}
+  .combo-row .meta{color:var(--muted); font-size:12px; font-family:var(--font-body); white-space:nowrap}
+  .combo-row:hover, .combo-row.active{background:var(--navy-soft)}
+  .combo-empty{padding:10px 12px; color:var(--muted); font-size:13px}
+  .hint{font-size:11.5px; color:var(--muted); margin-top:2px}
+
+  /* ---------- Banner ---------- */
+  .banner{display:flex; align-items:flex-start; gap:10px; border-radius:10px; padding:10px 12px; font-size:13px; font-weight:500}
+  .banner.ok{background:var(--ok-soft); color:var(--ok)}
+  .banner.warn{background:var(--warn-soft); color:var(--warn)}
+  .banner.danger{background:var(--danger-soft); color:var(--danger)}
+  .banner .dot{width:7px; height:7px; border-radius:50%; margin-top:5px; flex:none; background:currentColor}
+
+  /* ---------- Toggle ---------- */
+  .toggle{display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; width:fit-content}
+  .toggle button{font-family:var(--font-body); font-size:13px; font-weight:500; padding:7px 12px; border:none; cursor:pointer; background:var(--surface); color:var(--muted)}
+  .toggle button.on{background:var(--navy); color:#fff}
+
+  /* ---------- Dashboard tiles ---------- */
+  .dash{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px}
+  @media (max-width:640px){ .dash{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:420px){ .dash{grid-template-columns:1fr} }
+  .tile{background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; display:flex; flex-direction:column; gap:4px; min-width:0}
+  .tile.hero-tile{background:var(--navy-soft); border-color:var(--navy-2)}
+  .tile .t-label{font-size:11px; color:var(--muted); font-weight:600; letter-spacing:.02em}
+  .tile .t-value{font-family:var(--font-body); font-variant-numeric:tabular-nums; font-size:19px; font-weight:700; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .tile.hero-tile .t-value{color:var(--navy-2)}
+  .tile .t-value small{font-size:12px; font-weight:500; color:var(--muted); margin-left:3px}
+
+  details.assumptions{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:12px 16px}
+  details.assumptions summary{cursor:pointer; font-weight:600; font-size:13.5px}
+  details.assumptions ol{margin:10px 0 0; padding-left:20px; color:var(--muted); font-size:12.5px; line-height:1.6}
+
+  .step-nav{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:18px; padding-top:16px; border-top:1px solid var(--border)}
+  .step{display:flex; flex-direction:column; gap:14px}
+
+  .report-head{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap}
+  .report-head .big{font-family:var(--font-body); font-size:24px; font-weight:700; color:var(--navy-2)}
+  .download-row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+  .save-status{font-size:12.5px; color:var(--muted)}
+  .save-status.ok{color:var(--ok)}
+  .save-status.danger{color:var(--danger)}
+  .icon-btn svg{width:15px; height:15px; vertical-align:-2px; margin-right:6px}
+
+  /* ---------- Sidebar snapshot ---------- */
+  .snap-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); padding:18px}
+  .snap-card h3{font-size:13.5px; font-weight:700; margin-bottom:10px}
+  .snap-row{display:flex; justify-content:space-between; gap:8px; font-size:12.5px; padding:7px 0; border-bottom:1px solid var(--border)}
+  .snap-row:last-child{border-bottom:none}
+  .snap-row .k{color:var(--muted)}
+  .snap-row .v{font-family:var(--font-body); font-weight:600; text-align:right}
+  .snap-row .v.blurred{filter:blur(5px); user-select:none}
+  .snap-cta{margin-top:12px; display:flex; flex-direction:column; gap:8px}
+
+  /* ---------- Lock overlay (guest preview of steps 2-4) ---------- */
+  .lock-wrap{display:flex; flex-direction:column; align-items:center; text-align:center; gap:12px; padding:22px 14px; border:1px dashed var(--border); border-radius:var(--radius-md); background:var(--surface-2)}
+  .lock-icon{width:42px; height:42px; border-radius:50%; background:var(--navy-soft); color:var(--navy-2); display:flex; align-items:center; justify-content:center}
+  .lock-wrap h3{font-size:15px; font-weight:700}
+  .lock-wrap p{color:var(--muted); font-size:13px; max-width:46ch}
+  .teaser-row{display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin:6px 0}
+  .teaser-tile{background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 14px; min-width:110px}
+  .teaser-tile .tt-label{font-size:10.5px; color:var(--muted); font-weight:600}
+  .teaser-tile .tt-value{font-family:var(--font-body); font-size:16px; font-weight:700; filter:blur(5px); user-select:none}
+  .lock-list{list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; font-size:12.5px; color:var(--muted); text-align:left}
+  .lock-list li{display:flex; gap:8px; align-items:flex-start}
+  .lock-list svg{width:14px; height:14px; flex:none; margin-top:1px; color:var(--ok)}
+
+  /* ---------- Signup form ---------- */
+  .signup-wrap{display:flex; justify-content:center; padding-block:28px 48px}
+  .signup-card{max-width:640px; width:100%}
+  .signup-head{text-align:center; margin-bottom:6px}
+  .signup-head h2{font-size:21px; font-weight:700}
+  .signup-head p{color:var(--muted); font-size:13px; margin-top:4px}
+
+  /* ---------- Admin ---------- */
+  .admin-wrap{padding-block:26px 48px; display:flex; flex-direction:column; gap:18px}
+  .admin-metrics{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px}
+  @media (max-width:860px){ .admin-metrics{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  @media (max-width:460px){ .admin-metrics{grid-template-columns:1fr} }
+  .admin-metric{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md); padding:16px}
+  .admin-metric .m-label{font-size:11.5px; color:var(--muted); font-weight:600}
+  .admin-metric .m-value{font-family:var(--font-body); font-size:26px; font-weight:700; color:var(--navy-2); margin-top:4px}
+  .admin-tables{display:grid; grid-template-columns:1fr 1fr; gap:18px}
+  @media (max-width:980px){ .admin-tables{grid-template-columns:1fr} }
+  .table-wrap{overflow-x:auto}
+  table.data-table{width:100%; border-collapse:collapse; font-size:12.5px; min-width:480px}
+  table.data-table th{text-align:left; font-size:11px; letter-spacing:.03em; text-transform:uppercase; color:var(--muted); font-weight:700; padding:8px 10px; border-bottom:1px solid var(--border); white-space:nowrap}
+  table.data-table td{padding:9px 10px; border-bottom:1px solid var(--border); white-space:nowrap}
+  table.data-table tr:last-child td{border-bottom:none}
+  .sample-tag{font-size:9.5px; font-weight:700; letter-spacing:.03em; text-transform:uppercase; color:var(--warn); background:var(--warn-soft); border-radius:5px; padding:1px 6px; margin-left:6px}
+  .admin-restricted{display:flex; flex-direction:column; align-items:center; text-align:center; gap:10px; padding:60px 20px; color:var(--muted)}
+
+  /* ---------- Footer ---------- */
+  footer.sitefoot{background:var(--navy); color:#cfdcf2; margin-top:auto}
+  .sitefoot-inner{padding-block:26px; display:flex; flex-wrap:wrap; justify-content:space-between; gap:18px; align-items:center}
+  .sitefoot-inner .fbrand{display:flex; align-items:center; gap:10px; font-weight:700; color:#fff}
+  .sitefoot-inner .fbrand img{width:26px; height:23px; filter:brightness(0) invert(1)}
+  .sitefoot-inner p{font-size:12px; color:#a9bedd; max-width:48ch; margin:0}
+  .sitefoot-links{display:flex; gap:16px; font-size:12px}
+  .sitefoot-links a{color:#cfdcf2; text-decoration:none}
+
+  /* ---------- Presenter / demo switcher ---------- */
+  .presenter{position:fixed; bottom:16px; right:16px; z-index:50; font-size:12.5px}
+  .presenter-toggle{background:var(--surface); border:1px dashed var(--warn); color:var(--warn); border-radius:999px; padding:8px 14px; font-weight:700; cursor:pointer; box-shadow:0 6px 18px -8px rgba(0,0,0,.3); font-family:var(--font-body)}
+  .presenter-panel{margin-top:8px; background:var(--surface); border:1px solid var(--warn); border-radius:var(--radius-md); padding:12px; width:230px; box-shadow:0 10px 26px -10px rgba(0,0,0,.4); display:flex; flex-direction:column; gap:6px}
+  .presenter-panel .ptitle{font-weight:700; color:var(--warn); font-size:11.5px; text-transform:uppercase; letter-spacing:.03em; margin-bottom:2px}
+  .presenter-panel .pnote{font-size:11px; color:var(--muted); margin-bottom:4px}
+  .presenter-panel button{text-align:left; background:var(--surface-2); border:1px solid var(--border); border-radius:7px; padding:7px 10px; cursor:pointer; font-family:var(--font-body); font-size:12.5px; color:var(--fg)}
+  .presenter-panel button:hover{background:var(--surface-3)}
+  .presenter-panel .pmode{font-size:11px; color:var(--muted)}
+</style>
+
+<div style="display:flex; flex-direction:column; min-height:100%">
+
+  <header class="topbar shell-pad">
+    <div class="container topbar-inner">
+      <a href="#guest" class="brand" id="brandLink">
+        <img src="data:image/svg+xml;base64,PHN2ZyBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCA4MiA2OSIgdmlld0JveD0iMCAwIDgyIDY5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Im00MC44IDU5LjljMTYuMiAwIDI5LjQtMTMuMiAyOS40LTI5LjQgMC0xNi4zLTEzLjItMjkuNC0yOS40LTI5LjRzLTI5LjQgMTMuMi0yOS40IDI5LjRjMCAxNi4zIDEzLjIgMjkuNCAyOS40IDI5LjR6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTYyLjggMzUuOWMtLjItLjEtLjggMC0uNy0uNHMuMS0uNCAwLS44YzAtLjQuMi0xLS4yLS43cy0uNS41LS41LjUgMC0xLjMtLjUtMS4zLS44LjQtMS4yLjQtLjcgMC0xIC4yYy0uMi4yLTIgLjctMi4yIDBzLjEtMS42IDAtMi40IDEuNi0xLjcgMi4yLTEuOWMuNi0uMy44LTEuMSAxLjMtMS4zLjUtLjMuNC0uOC43LS42LjMuMS43LjQgMS4yLS4ycy0uMS0xLjEuOS0uOGMxIC40LjUuNC43IDEgLjMuNS41IDEuMS45LjkuNC0uMSAxLTEuOCAxLTIuMXMuNi45LjYgMS43LS4xIDEuMS4zIDEuOC45IDEuNC40IDIuMi0uMiAxLjItMSAyYy0uOC41LTIgMi41LTIuOSAxLjh6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTcwLjYgNTRzMTAuNC02LjQgMTAuNC0xMy4ydi0xMi4xYy0uNCAzLjItMi4zIDguOC0xMC41IDEzLjQiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzAuNiA1NC0uMS0uMWMuMS0uMSAxMC40LTYuNSAxMC40LTEzLjJ2LTExLjNjLS43IDMuNy0zLjEgOC42LTEwLjQgMTIuNmgtLjFjNy44LTQuMyAxMC05LjcgMTAuNS0xMy4zaC4xdjEyLjFjMCA2LjctMTAuMyAxMy4yLTEwLjQgMTMuMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTEuNyA1NC4xcy0xMC43LTYuMS0xMC42LTEzLjN2LTEyLjFjLjYgMy43IDIuNSA5LjIgMTAuNyAxMy44IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTExLjYgNTQuMWMtLjEgMC0xMC43LTYuMi0xMC42LTEzLjN2LTEyLjFoLjFjLjkgNS43IDQuNCAxMC4yIDEwLjYgMTMuN2wtLjEuMWMtNi0zLjQtOS41LTcuNi0xMC42LTEzLjF2MTEuNGMwIDcgMTAuNiAxMy4yIDEwLjcgMTMuMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjIuOCA0OC41aDIuNHYxLjhoLTIuNHoiIGZpbGw9IiNjMmM0YzYiIHRyYW5zZm9ybT0ibWF0cml4KDEgLS4wMDI1OTM3NSAuMDAyNTkzNzUgMSAtLjEyOCAuMTY2MikiLz48cGF0aCBkPSJtNjIuOCA1MC40di0xLjloMi41djEuOXptLjEtMS44djEuN2gyLjN2LTEuN3oiLz48cGF0aCBkPSJtNjAuNyAxMi41YzAtLjcgMS0xLjMgMi4xLTEuM3MyIC41IDIuMSAxLjJ2NC42YzAgLjctMSAxLjMtMi4xIDEuM3MtMi4xLS42LTIuMS0xLjNjMCAwIDAtNC40IDAtNC41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Mi44IDE4LjRjLTEuMiAwLTIuMi0uNi0yLjItMS40IDAgMCAwLTEuMiAwLTIuM3MwLTIuMiAwLTIuM2MwLS4zLjEtLjUuMy0uNy40LS40IDEuMS0uNiAxLjgtLjYgMS4xIDAgMiAuNSAyLjEgMS4ydi4xIDQuNmMuMi44LS44IDEuNC0yIDEuNHptMC03LjFjLS43IDAtMS40LjItMS43LjYtLjIuMi0uMy40LS4zLjZ2Mi4zIDIuM2MwIC43LjkgMS4yIDIgMS4yczItLjYgMi0xLjJjMCAwIDAtNC40IDAtNC42IDAtLjctLjktMS4yLTItMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02Mi44IDEzLjljLTEuMSAwLTItLjYtMi0xLjNzLjktMS4zIDItMS4zIDIgLjYgMiAxLjNjLjEuNy0uOCAxLjMtMiAxLjN6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTYyLjggMTRjLS43IDAtMS40LS4yLTEuNy0uNi0uMi0uMi0uNC0uNS0uNC0uOHMuMS0uNi40LS44Yy40LS40IDEtLjYgMS43LS42IDEuMiAwIDIuMS42IDIuMSAxLjQgMCAuNy0uOSAxLjQtMi4xIDEuNHptMC0yLjdjLS43IDAtMS4zLjItMS43LjYtLjIuMi0uMy40LS4zLjcgMCAuMi4xLjUuMy43LjQuNCAxIC42IDEuNy42IDEuMSAwIDItLjYgMi0xLjNzLS45LTEuMy0yLTEuM3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjIuOCAxMy40Yy0xIDAtMS45LS41LTEuOS0xLjFzLjgtMS4xIDEuOS0xLjFjMSAwIDEuOS41IDEuOSAxLjFzLS44IDEuMS0xLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Mi44IDEzLjVjLS43IDAtMS4zLS4yLTEuNy0uNi0uMi0uMi0uMy0uNC0uMy0uNiAwLS42LjktMS4yIDEuOS0xLjIgMS4xIDAgMS45LjUgMS45IDEuMi4yLjYtLjcgMS4yLTEuOCAxLjJ6bTAtMi4yYy0xIDAtMS44LjUtMS44IDEgMCAuMi4xLjMuMi41LjMuMy45LjUgMS42LjUgMSAwIDEuOC0uNSAxLjgtMSAwLS42LS44LTEtMS44LTF6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTY4LjEgMTguOWMwIC43LTEgMS4zLTIuMSAxLjNzLTIuMS0uNi0yLjEtMS4zYzAtLjEgMC00LjQgMC00LjUgMC0uNyAxLTEuMyAyLjEtMS4zczIgLjUgMi4xIDEuMiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Ni4xIDIwLjNjLS43IDAtMS40LS4yLTEuOC0uNi0uMi0uMi0uMy0uNS0uMy0uN3YtLjRjMC0xLjEgMC00IDAtNC4xIDAtLjMuMS0uNS4zLS43LjQtLjQgMS4xLS42IDEuOC0uNiAxLjEgMCAyIC41IDIuMSAxLjJ2LjFoLS4xLS4xdi0uMWMtLjEtLjYtMS0xLjItMi0xLjItLjcgMC0xLjQuMi0xLjcuNi0uMi4yLS4zLjQtLjMuNnY0LjEuNGMwIC4yLjEuNC4zLjYuNC40IDEgLjYgMS43LjYgMS4xIDAgMi0uNiAyLTEuMmguMWMuMS43LS45IDEuNC0yIDEuNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjYuMSAxNS44Yy0xLjEgMC0yLS42LTItMS4zcy45LTEuMyAyLTEuMyAyIC42IDIgMS4zLS45IDEuMy0yIDEuM3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjYuMSAxNS44Yy0xLjIgMC0yLjEtLjYtMi4xLTEuNHMuOS0xLjQgMi4xLTEuNGMuNiAwIDEuMS4xIDEuNS40cy42LjYuNiAxYzAgLjgtMSAxLjQtMi4xIDEuNHptMC0yLjdjLTEuMSAwLTIgLjYtMiAxLjNzLjkgMS4zIDIgMS4zIDItLjYgMi0xLjNjMC0uMy0uMi0uNy0uNi0uOXMtLjktLjQtMS40LS40eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02Ni4xIDE1LjJjLTEgMC0xLjktLjUtMS45LTEuMXMuOC0xLjEgMS45LTEuMWMxIDAgMS45LjUgMS45IDEuMS0uMS43LS45IDEuMS0xLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Ni4xIDE1LjNjLTEuMSAwLTEuOS0uNS0xLjktMS4yIDAtLjYuOC0xLjIgMS45LTEuMi43IDAgMS4zLjIgMS42LjYuMi4yLjMuNC4zLjYgMCAuNy0uOSAxLjItMS45IDEuMnptMC0yLjJjLTEgMC0xLjguNS0xLjggMSAwIC42LjggMSAxLjggMSAxIDAgMS44LS41IDEuOC0xIDAtLjItLjEtLjMtLjItLjUtLjQtLjMtMS0uNS0xLjYtLjV6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTY5IDIzLjFjLTEuMyAwLTIuNC0uNy0yLjQtMS41IDAtLjEgMC01IDAtNS4xIDAtLjggMS4xLTEuNSAyLjQtMS41IDEuMiAwIDIuMy42IDIuNCAxLjQiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjkgMjMuMmMtMS4zIDAtMi40LS43LTIuNC0xLjUgMC0uMSAwLTUuMSAwLTUuMSAwLS44IDEuMS0xLjUgMi40LTEuNSAxLjIgMCAyLjMuNiAyLjQgMS4zdi4xbC0uMS4xdi0uMWMtLjEtLjctMS4xLTEuMy0yLjMtMS4zLTEuMyAwLTIuMy42LTIuMyAxLjR2NS4xYzAgLjggMS4xIDEuNCAyLjMgMS40eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02OSAxOC4xYy0xLjMgMC0yLjMtLjctMi4zLTEuNXMxLTEuNSAyLjMtMS41IDIuMy43IDIuMyAxLjVjLjEuOC0xIDEuNS0yLjMgMS41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02OSAxOC4yYy0xLjMgMC0yLjQtLjctMi40LTEuNnMxLjEtMS42IDIuNC0xLjZjLjggMCAxLjUuMyAyIC43LjMuMy40LjYuNC45cy0uMS42LS40LjljLS40LjQtMS4yLjctMiAuN3ptMC0zLjFjLTEuMiAwLTIuMy43LTIuMyAxLjVzMSAxLjUgMi4yIDEuNWMuOCAwIDEuNS0uMiAxLjktLjcuMi0uMi40LS41LjQtLjhzLS4xLS42LS40LS44Yy0uMy0uNC0xLS43LTEuOC0uN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjkgMTcuNWMtMS4yIDAtMi4xLS41LTIuMS0xLjJzLjktMS4yIDIuMS0xLjIgMi4xLjUgMi4xIDEuMi0uOSAxLjItMi4xIDEuMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjkgMTcuNmMtLjggMC0xLjUtLjItMS45LS42LS4yLS4yLS4zLS40LS4zLS43IDAtLjQuMi0uNy42LS45cy45LS40IDEuNS0uNGMuNiAwIDEuMS4xIDEuNS40LjQuMi42LjYuNi45IDAgLjItLjEuNS0uMy43LS4yLjQtLjkuNi0xLjcuNnptMC0yLjVjLS42IDAtMS4xLjEtMS41LjQtLjMuMi0uNS41LS41LjggMCAuMi4xLjQuMy42LjQuNCAxIC42IDEuOC42LjcgMCAxLjQtLjIgMS44LS42LjItLjIuMy0uNC4zLS42IDAtLjMtLjItLjYtLjYtLjgtLjUtLjItMS0uNC0xLjYtLjR6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTcxLjMgMjUuOWMtMS4zIDAtMi40LS43LTIuNC0xLjUgMC0uMSAwLTUgMC01LjEgMC0uOCAxLjEtMS41IDIuNC0xLjUgMS4yIDAgMi4zLjYgMi40IDEuNHY1LjIiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzEuMyAyNmMtLjggMC0xLjYtLjMtMi4xLS43LS4yLS4yLS40LS41LS40LS44IDAtLjEgMC0zLjUgMC00Ljd2LS40YzAtLjQuMy0uOC43LTEuMS41LS4zIDEuMS0uNCAxLjctLjQgMS4zIDAgMi4zLjYgMi40IDEuNHYyLjQgMi43aC0uMXMwLTEgMC0yLjdjMC0xLjIgMC0yLjQgMC0yLjQtLjEtLjctMS4xLTEuMy0yLjMtMS4zLS42IDAtMS4yLjItMS42LjQtLjQuMy0uNy42LS43IDF2LjQgNC43YzAgLjIuMS41LjMuNy40LjQgMS4yLjcgMiAuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzEuMyAyMC45Yy0xLjMgMC0yLjMtLjctMi4zLTEuNXMxLTEuNSAyLjMtMS41IDIuMy43IDIuMyAxLjUtMSAxLjUtMi4zIDEuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzEuMyAyMC45Yy0uOCAwLTEuNS0uMy0yLS43LS4zLS4zLS40LS42LS40LS45cy4xLS42LjQtLjljLjQtLjQgMS4yLS43IDItLjcuOCAwIDEuNS4zIDIgLjcuMy4zLjQuNi40LjlzLS4xLjYtLjQuOWMtLjUuNS0xLjIuNy0yIC43em0wLTNjLS44IDAtMS41LjMtMS45LjctLjIuMi0uNC41LS40LjhzLjEuNi40LjhjLjQuNCAxLjEuNyAxLjkuNy44IDAgMS41LS4zIDEuOS0uNy4yLS4yLjQtLjUuNC0uOHMtLjEtLjYtLjQtLjhjLS40LS41LTEuMS0uNy0xLjktLjd6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTcxLjMgMjAuM2MtMS4yIDAtMi4xLS41LTIuMS0xLjJzLjktMS4yIDIuMS0xLjIgMi4xLjYgMi4xIDEuMi0uOSAxLjItMi4xIDEuMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzEuMyAyMC4zYy0uNiAwLTEuMS0uMS0xLjUtLjQtLjQtLjItLjYtLjYtLjYtLjkgMC0uNyAxLTEuMyAyLjItMS4zIDEuMiAwIDIuMi42IDIuMiAxLjMtLjEuOC0xLjEgMS4zLTIuMyAxLjN6bTAtMi40Yy0xLjEgMC0yIC41LTIgMS4yIDAgLjMuMi42LjYuOHMuOS40IDEuNS40YzEuMSAwIDItLjUgMi0xLjItLjEtLjctMS0xLjItMi4xLTEuMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzMuMSAzMC42Yy0xLjYgMC0yLjktLjgtMi45LTEuOCAwLS4xIDAtNi4yIDAtNi4zIDAtMSAxLjQtMS44IDIuOS0xLjhzMi44LjggMi45IDEuNyIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im03My4xIDMwLjdjLTEuNiAwLTMtLjktMy0xLjkgMC0uMSAwLTYuMyAwLTYuMyAwLTEgMS40LTEuOSAzLTEuOSAxLjUgMCAyLjguOCAyLjkgMS43di4xaC0uMXYtLjFjLS4xLS45LTEuMy0xLjYtMi44LTEuNi0xLjUgMC0yLjkuOC0yLjkgMS43djYuM2MwIC45IDEuMyAxLjcgMi45IDEuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzMuMSAyNC40Yy0xLjYgMC0yLjgtLjgtMi44LTEuOSAwLTEgMS4zLTEuOSAyLjgtMS45IDEuNiAwIDIuOC44IDIuOCAxLjlzLTEuMyAxLjktMi44IDEuOXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzMuMSAyNC41Yy0uOCAwLTEuNS0uMi0yLS42LS42LS40LS45LS45LS45LTEuNHMuMy0xIC45LTEuNGMuNS0uNCAxLjMtLjYgMi0uNiAxIDAgMS45LjMgMi40LjkuMy4zLjUuNy41IDEuMXMtLjIuOC0uNSAxLjFjLS41LjYtMS40LjktMi40Ljl6bTAtMy44Yy0uOCAwLTEuNS4yLTIgLjVzLS44LjgtLjggMS4zLjMuOS44IDEuM2MuNS4zIDEuMi41IDIgLjUuOSAwIDEuOC0uMyAyLjMtLjguMy0uMy40LS42LjQtMXMtLjItLjctLjQtMWMtLjUtLjUtMS40LS44LTIuMy0uOHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzMuMSAyMy43Yy0xLjQgMC0yLjYtLjctMi42LTEuNXMxLjItMS41IDIuNi0xLjUgMi42LjcgMi42IDEuNS0xLjIgMS41LTIuNiAxLjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTczLjEgMjMuOGMtLjcgMC0xLjQtLjItMS45LS41cy0uOC0uNy0uOC0xLjFjMC0uOSAxLjItMS42IDIuNy0xLjYuOSAwIDEuOC4zIDIuMy44LjIuMi40LjUuNC44LS4xLjktMS4zIDEuNi0yLjcgMS42em0wLTMuMWMtMS40IDAtMi41LjYtMi41IDEuNCAwIC40LjMuNy43IDEgLjUuMyAxLjEuNCAxLjguNCAxLjQgMCAyLjUtLjcgMi41LTEuNCAwLS4zLS4xLS41LS4zLS43LS41LS40LTEuMy0uNy0yLjItLjd6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTczLjQgMzUuNWMtMS43IDAtMy4zLS45LTMuMy0yIDAtLjEgMC02LjkgMC03IDAtMS4xIDEuNS0yIDMuMy0yIDEuNyAwIDMuMS44IDMuMiAxLjkiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzMuNCAzNS41Yy0xLjggMC0zLjMtMS0zLjMtMi4xIDAtLjEgMC0xLjggMC0zLjVzMC0zLjQgMC0zLjVjMC0xLjEgMS41LTIuMSAzLjMtMi4xIDEuNyAwIDMuMS44IDMuMyAxLjl2LjFoLS4xLS4xdi0uMWMtLjEtMS0xLjUtMS44LTMuMi0xLjgtMS43IDAtMy4yLjktMy4yIDJ2My41IDMuNWMwIDEuMSAxLjUgMS45IDMuMiAxLjl6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTczLjQgMjguNmMtMS43IDAtMy4yLS45LTMuMi0yLjFzMS40LTIuMSAzLjItMi4xYzEuNyAwIDMuMi45IDMuMiAyLjFzLTEuNSAyLjEtMy4yIDIuMXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzMuNCAyOC43Yy0xLjggMC0zLjItMS0zLjItMi4yczEuNC0yLjIgMy4yLTIuMmMxLjEgMCAyLjEuNCAyLjcgMSAuNC40LjUuOC41IDEuMnMtLjIuOC0uNSAxLjJjLS42LjYtMS42IDEtMi43IDF6bTAtNC4yYy0xLjcgMC0zLjEuOS0zLjEgMnMxLjQgMiAzLjEgMmMxIDAgMi0uMyAyLjYtLjkuMy0uMy41LS43LjUtMS4xcy0uMi0uOC0uNS0xLjFjLS42LS41LTEuNS0uOS0yLjYtLjl6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTczLjQgMjcuOGMtMS42IDAtMi45LS44LTIuOS0xLjdzMS4zLTEuNyAyLjktMS43IDIuOS44IDIuOSAxLjctMS4zIDEuNy0yLjkgMS43eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im03My40IDI3LjljLS44IDAtMS41LS4yLTIuMS0uNXMtLjktLjgtLjktMS4yYzAtLjMuMS0uNi40LS45LjUtLjUgMS41LS45IDIuNS0uOSAxLjYgMCAyLjkuOCAyLjkgMS43IDAgLjMtLjEuNi0uNC45LS40LjUtMS40LjktMi40Ljl6bTAtMy40Yy0xIDAtMS45LjMtMi40LjgtLjIuMi0uNC41LS40LjggMCAuNC4zLjguOCAxLjFzMS4yLjUgMiAuNWMxIDAgMS45LS4zIDIuNC0uOC4yLS4yLjQtLjUuNC0uOCAwLS45LTEuMi0xLjYtMi44LTEuNnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzEuMiAzOS45Yy0xLjggMC0zLjQtLjktMy40LTIuMSAwLS4xIDAtNy4xIDAtNy4yIDAtMS4yIDEuNi0yLjEgMy40LTIuMSAxLjcgMCAzLjIuOSAzLjMgMiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im03MS4yIDQwYy0xLjkgMC0zLjQtMS0zLjQtMi4xIDAtLjEgMC03LjEgMC03LjIgMC0xLjIgMS42LTIuMiAzLjQtMi4yIDEuNyAwIDMuMi45IDMuNCAxLjl2LjFoLS4xdi0uMWMtLjEtMS4xLTEuNi0xLjktMy4zLTEuOS0xLjggMC0zLjMuOS0zLjMgMnY3LjJjMCAxLjEgMS41IDIgMy4zIDJ6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTcxLjEgMzIuOGMtMS44IDAtMy4zLTEtMy4zLTIuMnMxLjUtMi4yIDMuMy0yLjIgMy4zIDEgMy4zIDIuMmMwIDEuMy0xLjQgMi4yLTMuMyAyLjJ6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTcxLjEgMzIuOWMtMS44IDAtMy4zLTEtMy4zLTIuMnMxLjUtMi4yIDMuMy0yLjJjMS44IDAgMy4zIDEgMy4zIDIuMi4xIDEuMi0xLjQgMi4yLTMuMyAyLjJ6bTAtNC4zYy0xLjggMC0zLjIuOS0zLjIgMi4xczEuNCAyLjEgMy4yIDIuMWMxLjggMCAzLjItLjkgMy4yLTIuMXMtMS40LTIuMS0zLjItMi4xeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im03MS4xIDMyYy0xLjYgMC0zLS44LTMtMS43IDAtMSAxLjMtMS43IDMtMS43IDEuNiAwIDMgLjggMyAxLjdzLTEuMyAxLjctMyAxLjd6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTcxLjEgMzJjLTEuNyAwLTMtLjgtMy0xLjhzMS40LTEuOCAzLTEuOGMxLjcgMCAzIC44IDMgMS44LjEgMS0xLjMgMS44LTMgMS44em0wLTMuNGMtMS42IDAtMi45LjgtMi45IDEuN3MxLjMgMS43IDIuOSAxLjdjMS42IDAgMi45LS44IDIuOS0xLjcuMS0xLTEuMi0xLjctMi45LTEuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjcuMyA0NS40Yy0yIDAtMy44LTEuMS0zLjgtMi40IDAtLjEgMC04LjEgMC04LjMgMC0xLjMgMS44LTIuNCAzLjgtMi40czMuNyAxIDMuOCAyLjJ2LjEiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjcuMyA0NS40Yy0xIDAtMi0uMy0yLjctLjctLjgtLjUtMS4yLTEuMS0xLjItMS43IDAtLjEgMC04LjEgMC04LjMgMC0uNy40LTEuMyAxLjItMS43LjctLjQgMS43LS43IDIuNy0uNyAyIDAgMy43IDEgMy45IDIuMnYuMWgtLjItLjF2LS4xYy0uMS0xLjItMS44LTIuMi0zLjctMi4yLTEgMC0xLjkuMy0yLjcuNy0uNy40LTEuMSAxLTEuMSAxLjZ2OC4zYzAgLjYuNCAxLjIgMS4xIDEuNnMxLjcuNyAyLjcuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjcuMiAzNy4zYy0yLjEgMC0zLjctMS4xLTMuNy0yLjVzMS43LTIuNSAzLjctMi41YzIuMSAwIDMuNyAxLjEgMy43IDIuNS4xIDEuNC0xLjYgMi41LTMuNyAyLjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTY3LjIgMzcuNGMtMi4xIDAtMy44LTEuMS0zLjgtMi41czEuNy0yLjUgMy44LTIuNWMyLjEgMCAzLjggMS4xIDMuOCAyLjUgMCAuNy0uNCAxLjMtMS4xIDEuOC0uNy40LTEuNi43LTIuNy43em0wLTVjLTIgMC0zLjcgMS4xLTMuNyAyLjRzMS42IDIuNCAzLjcgMi40YzEgMCAxLjktLjMgMi42LS43LjctLjUgMS4xLTEuMSAxLjEtMS43IDAtMS4zLTEuNi0yLjQtMy43LTIuNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjcuMiAzNi4zYy0xLjkgMC0zLjQtLjktMy40LTJzMS41LTIgMy40LTIgMy40LjkgMy40IDItMS41IDItMy40IDJ6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTY3LjIgMzYuNGMtMS4yIDAtMi40LS40LTMtMS0uMy0uMy0uNS0uNy0uNS0xIDAtLjQuMi0uNy41LTEgLjYtLjYgMS44LTEgMy0xIDEuOSAwIDMuNS45IDMuNSAyLjEgMCAuNi0uNCAxLjEtMSAxLjUtLjcuMi0xLjUuNC0yLjUuNHptMC00Yy0xLjIgMC0yLjMuNC0yLjkgMS0uMy4zLS40LjYtLjQgMSAwIC4zLjIuNy40IDEgLjYuNiAxLjcgMSAyLjkgMSAuOSAwIDEuNy0uMiAyLjQtLjYuNi0uNCAxLS44IDEtMS4zIDAtMS4yLTEuNS0yLjEtMy40LTIuMXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjUuNSAzOC42YzAtMS40LTEuOS0yLjQtNC0yLjQtMiAwLTMuOCAxLTMuOSAyLjN2LjEgOC42YzAgMS40IDEuOCAyLjQgMy45IDIuNHM0LTEuMSA0LTIuNWMwLS4xIDAtOC4zIDAtOC41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02MS41IDQ5LjdjLTIuMiAwLTQtMS4yLTQtMi41di04LjYtLjFjLjItMS4zIDEuOS0yLjMgNC0yLjMgMi4yIDAgNCAxLjEgNCAyLjV2OC41Yy4xIDEuMy0xLjggMi41LTQgMi41em0tMy44LTExLjF2OC42YzAgMS4zIDEuOCAyLjQgMy45IDIuNHMzLjktMS4xIDMuOS0yLjRjMC0uMSAwLTguMyAwLTguNSAwLTEuMy0xLjgtMi40LTMuOS0yLjQtMi4xLS4xLTMuOC45LTMuOSAyLjN6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTYxLjUgNDEuM2MyLjEgMCAzLjgtMS4xIDMuOC0yLjVzLTEuNy0yLjUtMy44LTIuNS0zLjggMS4xLTMuOCAyLjVjMCAxLjMgMS43IDIuNSAzLjggMi41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02MS41IDQxLjNjLTIuMiAwLTMuOS0xLjItMy45LTIuNnMxLjgtMi42IDMuOS0yLjZjMS4zIDAgMi41LjQgMy4zIDEuMi40LjQuNy45LjcgMS40cy0uMiAxLS43IDEuNGMtLjcuOC0yIDEuMi0zLjMgMS4yem0wLTUuMWMtMi4xIDAtMy44IDEuMS0zLjggMi41czEuNyAyLjUgMy44IDIuNWMxLjMgMCAyLjUtLjQgMy4yLTEuMS40LS40LjYtLjkuNi0xLjRzLS4yLS45LS42LTEuM2MtLjctLjctMS45LTEuMi0zLjItMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02MS41IDQwLjNjMS45IDAgMy41LS45IDMuNS0ycy0xLjYtMi0zLjUtMi0zLjUuOS0zLjUgMiAxLjYgMiAzLjUgMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjEuNSA0MC4zYy0xLjMgMC0yLjQtLjQtMy4xLTEtLjMtLjMtLjQtLjctLjQtMS4xIDAtLjYuNC0xLjEgMS4xLTEuNXMxLjYtLjYgMi41LS42YzEuMyAwIDIuNC40IDMuMSAxIC4zLjMuNS43LjUgMS4xcy0uMi44LS41IDEuMWMtLjcuNi0xLjkgMS0zLjIgMXptMC00LjFjLS45IDAtMS44LjItMi40LjZzLTEgLjktMSAxLjRjMCAuMy4yLjcuNSAxIC42LjYgMS44IDEgMyAxIDEuMiAwIDIuNC0uNCAzLTEgLjMtLjMuNS0uNi41LTEgMC0uMy0uMi0uNy0uNS0xLS43LS42LTEuOC0xLTMuMS0xeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0yMS4yIDEyLjVjMC0uNy0xLTEuMy0yLjEtMS4zcy0yIC41LTIuMSAxLjJ2NC42YzAgLjcgMSAxLjMgMi4xIDEuM3MyLjEtLjYgMi4xLTEuM2MwIDAgMC00LjQgMC00LjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTE5LjEgMTguNGMtMS4yIDAtMi4xLS42LTIuMi0xLjQgMCAwIDAtMS4yIDAtMi4zIDAtMi4yIDAtMi4zIDAtMi4zdi0uMWMuMS0uNyAxLTEuMiAyLjEtMS4yLjUgMCAxLjEuMSAxLjUuNHMuNy42LjcgMXYzLjkuNmMwIC40LS4yLjctLjcgMS0uMy4zLS44LjQtMS40LjR6bS0yLTUuOXYyLjMgMi4zYzAgLjcuOSAxLjIgMiAxLjIuNSAwIDEtLjEgMS40LS40LjQtLjIuNi0uNS42LS45di0uNmMwLTEuMyAwLTMuOSAwLTMuOSAwLS4zLS4yLS42LS42LS45LS40LS4yLS45LS40LTEuNC0uNC0xIC4xLTEuOS42LTIgMS4zeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xOS4xIDEzLjljMS4xIDAgMi0uNiAyLTEuNCAwLS43LS45LTEuMy0yLTEuM3MtMiAuNi0yIDEuM2MwIC44LjkgMS40IDIgMS40eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xOS4xIDE0Yy0xLjEgMC0yLjEtLjYtMi4xLTEuNHMuOS0xLjQgMi4xLTEuNGMxLjIgMCAyLjEuNiAyLjEgMS40cy0uOSAxLjQtMi4xIDEuNHptMC0yLjdjLTEuMSAwLTIgLjYtMiAxLjNzLjkgMS4zIDIgMS4zYzEuMSAwIDItLjYgMi0xLjNzLS45LTEuMy0yLTEuM3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTkuMSAxMy40YzEgMCAxLjktLjUgMS45LTEuMXMtLjgtMS4xLTEuOS0xLjFjLTEgMC0xLjkuNS0xLjkgMS4xLjEuNi45IDEuMSAxLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xOS4xIDEzLjVjLS41IDAtMS0uMS0xLjMtLjMtLjQtLjItLjYtLjUtLjYtLjggMC0uNi45LTEuMiAxLjktMS4yIDEuMSAwIDEuOS41IDEuOSAxLjIuMS42LS44IDEuMS0xLjkgMS4xem0wLTIuMmMtMSAwLTEuOC41LTEuOCAxIDAgLjMuMi41LjUuN3MuOC4zIDEuMy4zYzEgMCAxLjgtLjUgMS44LTFzLS44LTEtMS44LTF6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE3LjQgNDguMnYyLjVsMi45LTEuNS4xLS45eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xNy40IDUwLjh2LTIuNmwzIC4xdjF6bTAtMi41djIuNGwyLjktMS41di0uOXoiLz48cGF0aCBkPSJtMTggMTQuNGMwLS43LTEtMS4zLTIuMS0xLjNzLTIgLjUtMi4xIDEuMnY0LjZjMCAuNyAxIDEuMyAyLjEgMS4zczIuMS0uNiAyLjEtMS4zYzAtLjEgMC00LjQgMC00LjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTE1LjkgMjAuM2MtMS4yIDAtMi4xLS42LTIuMS0xLjQgMCAwIDAtMS40IDAtMi43IDAtMS43IDAtMS45IDAtMS45LjEtLjcgMS0xLjMgMi4xLTEuMy41IDAgMS4xLjEgMS41LjRzLjcuNi43IDF2NC41YzAgLjgtMSAxLjQtMi4yIDEuNHptLTItNnYxLjkgMi43YzAgLjcuOSAxLjIgMiAxLjJzMi0uNiAyLTEuMmMwLS4xIDAtNC41IDAtNC41IDAtLjMtLjItLjYtLjYtLjktLjQtLjItLjktLjQtMS40LS40LTEgLjEtMS45LjYtMiAxLjJ6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE1LjkgMTUuOGMxLjEgMCAyLS42IDItMS4zcy0uOS0xLjMtMi0xLjMtMiAuNi0yIDEuMy45IDEuMyAyIDEuM3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTUuOSAxNS45Yy0uNyAwLTEuNC0uMi0xLjctLjYtLjItLjItLjQtLjUtLjQtLjggMC0uOC45LTEuNCAyLjEtMS40LjYgMCAxLjEuMSAxLjUuNHMuNi42LjYgMWMwIC43LS45IDEuNC0yLjEgMS40em0wLTIuN2MtMS4xIDAtMiAuNi0yIDEuMyAwIC4yLjEuNS4zLjcuNC40IDEgLjYgMS43LjYgMS4xIDAgMi0uNiAyLTEuMyAwLS4zLS4yLS43LS42LS45LS40LS4zLS45LS40LTEuNC0uNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTUuOSAxNS4zYzEgMCAxLjktLjUgMS45LTEuMXMtLjgtMS4xLTEuOS0xLjFjLTEgMC0xLjkuNS0xLjkgMS4xLjEuNi45IDEuMSAxLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xNS45IDE1LjNjLS43IDAtMS4zLS4yLTEuNi0uNi0uMi0uMi0uMy0uNC0uMy0uNnMuMS0uNC4zLS42Yy4zLS4zIDEtLjYgMS42LS42IDEuMSAwIDEuOS41IDEuOSAxLjIgMCAuMy0uMi42LS42LjgtLjMuMy0uOC40LTEuMy40em0wLTIuMWMtLjYgMC0xLjIuMi0xLjYuNS0uMi4yLS4yLjMtLjIuNXMuMS4zLjIuNWMuMy4zLjkuNSAxLjYuNS41IDAgLjktLjEgMS4zLS4zLjMtLjIuNS0uNC41LS43IDAtLjYtLjgtMS0xLjgtMXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTEuNyAyMi41YzAtLjktMS4zLTEuNy0yLjctMS43cy0yLjYuNy0yLjcgMS42djUuOWMwIC45IDEuMyAxLjcgMi43IDEuNyAxLjUgMCAyLjctLjggMi43LTEuNyAwIDAgMC01LjcgMC01Ljh6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTguOSAzMC4xYy0uNyAwLTEuNC0uMi0xLjktLjVzLS44LS44LS44LTEuMmMwIDAgMC0xLjUgMC0zIDAtMS44IDAtMi45IDAtM3YtLjFjLjEtLjkgMS4zLTEuNiAyLjctMS42LjkgMCAxLjguMyAyLjMuOC4zLjMuNC42LjQuOXY1LjljMCAuMy0uMS42LS40LjktLjQuNi0xLjMuOS0yLjMuOXptLTIuNi03Ljd2MyAzYzAgLjQuMy45LjggMS4yczEuMi40IDEuOC40Yy45IDAgMS44LS4zIDIuMy0uOC4zLS4zLjQtLjYuNC0uOCAwLS4xIDAtNS44IDAtNS45IDAtLjMtLjEtLjYtLjQtLjgtLjUtLjUtMS40LS44LTIuMy0uOC0xLjQgMC0yLjUuNy0yLjYgMS41eiIvPjxwYXRoIGQ9Im04LjkgMjQuM2MxLjUgMCAyLjYtLjggMi42LTEuOHMtMS4yLTEuNy0yLjYtMS43Yy0xLjUgMC0yLjYuOC0yLjYgMS44IDAgLjkgMS4yIDEuNyAyLjYgMS43eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMjQuNGMtMS41IDAtMi43LS44LTIuNy0xLjggMC0uNS4zLS45LjgtMS4zLjUtLjMgMS4yLS41IDEuOS0uNSAxLjUgMCAyLjcuOCAyLjcgMS44cy0xLjIgMS44LTIuNyAxLjh6bTAtMy41Yy0uNyAwLTEuNC4yLTEuOS41cy0uOC44LS44IDEuMmMwIC45IDEuMiAxLjcgMi42IDEuN3MyLjYtLjggMi42LTEuN2MuMi0xLTEtMS43LTIuNS0xLjd6Ii8+PHBhdGggZD0ibTguOSAyMy42YzEuMyAwIDIuNC0uNiAyLjQtMS40cy0xLjEtMS40LTIuNC0xLjQtMi40LjYtMi40IDEuNCAxLjEgMS40IDIuNCAxLjR6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTguOSAyMy43Yy0uNiAwLTEuMy0uMS0xLjctLjQtLjUtLjMtLjctLjYtLjctMSAwLS4zLjEtLjUuMy0uNy40LS40IDEuMi0uNyAyLjEtLjcuNiAwIDEuMy4xIDEuNy40LjUuMy43LjYuNyAxIC4xLjctMSAxLjQtMi40IDEuNHptMC0uMWMxLjMgMCAyLjQtLjYgMi40LTEuNCAwLS40LS4yLS43LS43LTEtLjQtLjMtMS0uNC0xLjctLjQtLjggMC0xLjYuMy0yLjEuNy0uMi4yLS4zLjQtLjMuNyAwIC40LjIuNy43IDFzMS4xLjQgMS43LjR6Ii8+PHBhdGggZD0ibTE1LjMgMTYuNmMwLS44LTEuMS0xLjUtMi40LTEuNS0xLjIgMC0yLjMuNi0yLjQgMS40djUuMmMwIC44IDEuMSAxLjUgMi40IDEuNXMyLjQtLjcgMi40LTEuNWMwLS4xIDAtNSAwLTUuMXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTIuOSAyMy4yYy0xLjMgMC0yLjQtLjctMi40LTEuNXYtLjFjMC0xLjIgMC01IDAtNS4xdi0uMWMuMS0uOCAxLjItMS40IDIuNC0xLjQuNiAwIDEuMi4yIDEuNy40LjUuMy43LjcuNyAxLjF2Mi42IDIuNWMwIC4zLS4xLjYtLjQuOC0uMy42LTEuMS44LTIgLjh6bS0yLjMtNi43djUuMS4xYzAgLjggMS4xIDEuNCAyLjMgMS40LjggMCAxLjYtLjMgMi0uNy4yLS4yLjMtLjUuMy0uNyAwIDAgMC0xLjMgMC0yLjUgMC0xLjMgMC0yLjUgMC0yLjYgMC0uNC0uMi0uNy0uNy0xLS40LS4zLTEtLjQtMS42LS40LTEuMiAwLTIuMi42LTIuMyAxLjN6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTEyLjkgMTguMmMxLjMgMCAyLjMtLjcgMi4zLTEuNXMtMS0xLjUtMi4zLTEuNS0yLjMuNy0yLjMgMS41IDEuMSAxLjUgMi4zIDEuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTIuOSAxOC4yYy0xLjMgMC0yLjQtLjctMi40LTEuNnMxLjEtMS42IDIuNC0xLjZjMS4zIDAgMi40LjcgMi40IDEuNnMtMS4xIDEuNi0yLjQgMS42em0wLTNjLTEuMiAwLTIuMi43LTIuMiAxLjVzMSAxLjUgMi4yIDEuNWMxLjIgMCAyLjItLjcgMi4yLTEuNS4xLS45LS45LTEuNS0yLjItMS41eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMi45IDE3LjZjMS4yIDAgMi4xLS42IDIuMS0xLjIgMC0uNy0uOS0xLjItMi4xLTEuMnMtMi4xLjYtMi4xIDEuMiAxIDEuMiAyLjEgMS4yeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xMi45IDE3LjZjLS42IDAtMS4xLS4xLTEuNS0uNC0uNC0uMi0uNi0uNi0uNi0uOSAwLS43IDEtMS4zIDIuMi0xLjNzMi4yLjYgMi4yIDEuM2MtLjEuNy0xLjEgMS4zLTIuMyAxLjN6bTAtMi40Yy0xLjEgMC0yIC41LTIgMS4yIDAgLjMuMi42LjYuOHMuOS40IDEuNS40YzEuMSAwIDItLjUgMi0xLjJzLS45LTEuMi0yLjEtMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMyAxOS4zYzAtLjgtMS4xLTEuNS0yLjQtMS41LTEuMiAwLTIuMy42LTIuNCAxLjR2NS4yYzAgLjggMS4xIDEuNSAyLjQgMS41czIuNC0uNyAyLjQtMS41YzAgMCAwLTUgMC01LjF6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEwLjcgMjZjLTEuMyAwLTIuNC0uNy0yLjQtMS41IDAtLjEgMC01LjEgMC01LjJ2LS4xYy4xLS44IDEuMi0xLjQgMi40LTEuNCAxLjMgMCAyLjQuNyAyLjQgMS41djUuMWMwIC45LTEuMSAxLjYtMi40IDEuNnptLTIuMy02Ljd2NS4yYzAgLjggMS4xIDEuNCAyLjMgMS40IDEuMyAwIDIuMy0uNiAyLjMtMS40IDAtLjEgMC01LjEgMC01LjEgMC0uOC0xLjEtMS40LTIuMy0xLjQtMS4yLS4xLTIuMy41LTIuMyAxLjN6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTEwLjcgMjAuOWMxLjMgMCAyLjMtLjcgMi4zLTEuNXMtMS0xLjUtMi4zLTEuNS0yLjMuNy0yLjMgMS41IDEgMS41IDIuMyAxLjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEwLjcgMjFjLTEuMyAwLTIuNC0uNy0yLjQtMS42IDAtLjQuMy0uOC43LTEuMXMxLS41IDEuNy0uNWMuOCAwIDEuNS4zIDIgLjcuMy4zLjQuNi40LjlzLS4xLjYtLjQuOWMtLjUuNC0xLjIuNy0yIC43em0wLS4xYy44IDAgMS41LS4zIDEuOS0uNy4yLS4yLjQtLjUuNC0uOHMtLjEtLjYtLjQtLjhjLS40LS40LTEuMS0uNy0xLjktLjctLjYgMC0xLjIuMi0xLjYuNC0uNC4zLS42LjYtLjYgMS0uMS45LjkgMS42IDIuMiAxLjZ6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTEwLjcgMjAuM2MxLjIgMCAyLjEtLjYgMi4xLTEuMiAwLS43LS45LTEuMi0yLjEtMS4ycy0yLjEuNi0yLjEgMS4yYzAgLjcuOSAxLjIgMi4xIDEuMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTAuNyAyMC40Yy0xLjIgMC0yLjItLjYtMi4yLTEuM3MxLTEuMyAyLjItMS4zIDIuMi42IDIuMiAxLjNjLS4xLjctMSAxLjMtMi4yIDEuM3ptMC0yLjVjLTEuMSAwLTIgLjUtMiAxLjIgMCAuNi45IDEuMiAyIDEuMiAxLjEgMCAyLS41IDItMS4yIDAtLjYtLjktMS4yLTItMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMS44IDIyLjVjMC0xLTEuNC0xLjgtMi45LTEuOHMtMi44LjgtMi45IDEuN3Y2LjRjMCAxIDEuMyAxLjggMi45IDEuOHMyLjktLjggMi45LTEuOGMwLS4xIDAtNi4yIDAtNi4zeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMzAuN2MtMSAwLTItLjMtMi41LS45LS4zLS4zLS41LS42LS41LTEgMCAwIDAtNC44IDAtNi4zdi0uMmMuMS0xIDEuNC0xLjcgMy0xLjcuOCAwIDEuNS4yIDIuMS41LjYuNC45LjguOSAxLjN2Ni4zYzAgLjMtLjIuNy0uNSAxLS41LjctMS41IDEtMi41IDF6bS0yLjgtOC4ydjYuNGMwIC4zLjEuNi40LjkuNS41IDEuNC44IDIuNC44IDEgMCAxLjktLjMgMi40LS45LjMtLjMuNC0uNi40LS45IDAgMCAwLTYuMiAwLTYuMyAwLS41LS4zLS45LS44LTEuMnMtMS4zLS41LTItLjVjLTEuNSAwLTIuNy43LTIuOCAxLjd6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTguOSAyNC41YzEuNiAwIDIuOC0uOCAyLjgtMS45IDAtMS0xLjMtMS45LTIuOC0xLjktMS42IDAtMi44LjgtMi44IDEuOSAwIDEgMS4yIDEuOSAyLjggMS45eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMjQuNWMtLjggMC0xLjUtLjItMi0uNi0uNi0uMy0uOS0uOC0uOS0xLjMgMC0xLjEgMS4zLTEuOSAyLjktMS45IDEgMCAxLjkuMyAyLjQuOS4zLjMuNS43LjUgMS4xcy0uMi44LS41IDEuMWMtLjUuNC0xLjQuNy0yLjQuN3ptMC0zLjdjLTEuNSAwLTIuOC44LTIuOCAxLjggMCAuNS4zLjkuOCAxLjMuNS4zIDEuMi41IDIgLjUuOSAwIDEuOC0uMyAyLjMtLjguMy0uMy40LS42LjQtMXMtLjItLjctLjQtMWMtLjUtLjUtMS40LS44LTIuMy0uOHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtOC45IDIzLjdjMS40IDAgMi42LS43IDIuNi0xLjVzLTEuMi0xLjUtMi42LTEuNS0yLjYuNy0yLjYgMS41YzAgLjkgMS4yIDEuNSAyLjYgMS41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMjMuOGMtLjkgMC0xLjgtLjMtMi4zLS44LS4yLS4yLS40LS41LS40LS44cy4xLS42LjQtLjhjLjUtLjUgMS4zLS44IDIuMy0uOC43IDAgMS40LjIgMS45LjVzLjguNy44IDEuMS0uMy44LS44IDEuMS0xLjIuNS0xLjkuNXptMC0zYy0uOSAwLTEuNy4zLTIuMi43LS4yLjItLjMuNS0uMy43IDAgLjMuMS41LjMuNy41LjUgMS4zLjcgMi4yLjcuNyAwIDEuMy0uMiAxLjgtLjQuNS0uMy43LS42LjctMXMtLjMtLjctLjctMWMtLjUtLjMtMS4xLS40LTEuOC0uNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTEuOCAyNi41YzAtMS4xLTEuNS0yLTMuMy0yLTEuNyAwLTMuMS44LTMuMiAxLjl2Ny4xYzAgMS4xIDEuNSAyIDMuMiAyczMuMy0uOSAzLjMtMmMwLS4xIDAtNi45IDAtN3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtOC42IDM1LjZjLTEuMSAwLTIuMi0uNC0yLjgtMS0uMy0uMy0uNS0uNy0uNS0xLjEgMCAwIDAtMi41IDAtNi45di0uM2MuMS0xLjEgMS42LTEuOSAzLjMtMS45IDEuOCAwIDMuMyAxIDMuMyAyLjF2N2MwIC42LS40IDEuMS0xIDEuNXMtMS41LjYtMi4zLjZ6bS0zLjItOS4ydi4yIDYuOWMwIC40LjIuNy41IDEgLjYuNiAxLjYuOSAyLjcuOS44IDAgMS42LS4yIDIuMi0uNnMuOS0uOS45LTEuNGMwLS4xIDAtNyAwLTcgMC0xLjEtMS41LTEuOS0zLjItMS45LTEuNiAwLTMgLjktMy4xIDEuOXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtOC42IDI4LjdjMS43IDAgMy4yLS45IDMuMi0yLjFzLTEuNC0yLjEtMy4yLTIuMWMtMS43IDAtMy4yLjktMy4yIDIuMSAwIDEuMSAxLjQgMi4xIDMuMiAyLjF6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTguNiAyOC43Yy0uOSAwLTEuNy0uMi0yLjMtLjZzLTEtMS0xLTEuNWMwLS42LjMtMS4xIDEtMS41LjYtLjQgMS40LS42IDIuMy0uNiAxLjggMCAzLjIgMSAzLjIgMi4yIDAgLjQtLjIuOC0uNSAxLjItLjYuNS0xLjYuOC0yLjcuOHptMC00LjFjLS44IDAtMS42LjItMi4yLjZzLS45LjktLjkgMS40LjMgMSAuOSAxLjQgMS40LjYgMi4yLjZjMSAwIDItLjMgMi42LS45LjMtLjMuNS0uNy41LTEuMSAwLTEuMS0xLjQtMi0zLjEtMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtOC42IDI3LjljMS42IDAgMi45LS44IDIuOS0xLjdzLTEuMy0xLjctMi45LTEuNy0yLjkuOC0yLjkgMS43IDEuMyAxLjcgMi45IDEuN3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtOC42IDI3LjljLTEuNiAwLTIuOS0uOC0yLjktMS43IDAtMSAxLjMtMS44IDIuOS0xLjggMSAwIDIgLjMgMi41LjkuMy4zLjQuNi40LjkgMCAuOS0xLjMgMS43LTIuOSAxLjd6bTAtMy40Yy0xLjYgMC0yLjguNy0yLjggMS42czEuMyAxLjYgMi44IDEuNmMxLjYgMCAyLjgtLjcgMi44LTEuNiAwLS4zLS4xLS42LS40LS44LS41LS40LTEuNC0uOC0yLjQtLjh6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE0LjIgMzAuNmMwLTEuMS0xLjYtMi4xLTMuNC0yLjEtMS43IDAtMy4yLjktMy4zIDJ2Ny4zYzAgMS4yIDEuNSAyLjEgMy4zIDIuMXMzLjQtLjkgMy40LTIuMWMwLS4xIDAtNy4xIDAtNy4yeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xMC44IDQwYy0xLjggMC0zLjQtMS0zLjQtMi4xIDAtLjEgMC02LjEgMC03LjN2LS4yYy4xLTEuMSAxLjYtMiAzLjQtMiAxLjIgMCAyLjMuNCAyLjkgMSAuMy4zLjUuNy41IDEuMXY3LjJjLjEgMS4zLTEuNSAyLjMtMy40IDIuM3ptLTMuMi05LjR2Ny4zYzAgMS4xIDEuNSAyIDMuMyAyIDEuOCAwIDMuMy0uOSAzLjMtMiAwLS4xIDAtNy4yIDAtNy4yIDAtLjQtLjItLjctLjUtMS0uNi0uNi0xLjctMS0yLjgtMS0xLjgtLjEtMy4yLjgtMy4zIDEuOXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTAuOCAzMi45YzEuOCAwIDMuMy0xIDMuMy0yLjJzLTEuNS0yLjItMy4zLTIuMi0zLjMgMS0zLjMgMi4yYy4xIDEuMiAxLjUgMi4yIDMuMyAyLjJ6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEwLjggMzIuOWMtMS44IDAtMy4zLTEtMy4zLTIuMnMxLjUtMi4yIDMuMy0yLjJjMS44IDAgMy4zIDEgMy4zIDIuMi4xIDEuMi0xLjQgMi4yLTMuMyAyLjJ6bTAtNC4zYy0xLjggMC0zLjIuOS0zLjIgMi4xczEuNCAyLjEgMy4yIDIuMWMxLjggMCAzLjItLjkgMy4yLTIuMXMtMS40LTIuMS0zLjItMi4xeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMC44IDMyYzEuNiAwIDMtLjggMy0xLjcgMC0xLTEuMy0xLjctMy0xLjctMS42IDAtMyAuOC0zIDEuNy4xLjkgMS40IDEuNyAzIDEuN3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTAuOCAzMi4xYy0uOCAwLTEuNi0uMi0yLjEtLjUtLjYtLjMtLjktLjgtLjktMS4zIDAtMSAxLjQtMS44IDMtMS44IDEuNyAwIDMgLjggMyAxLjguMSAxLTEuMyAxLjgtMyAxLjh6bTAtMy41Yy0xLjYgMC0yLjkuOC0yLjkgMS43IDAgLjQuMy45LjggMS4yLjYuMyAxLjMuNSAyLjEuNSAxLjYgMCAyLjktLjggMi45LTEuNy4xLS45LTEuMy0xLjctMi45LTEuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTQuNiA0NS4zYzIgMCAzLjgtMS4xIDMuOC0yLjQgMC0uMSAwLTguMSAwLTguMyAwLTEuMy0xLjgtMi40LTMuOC0yLjRzLTMuNyAxLTMuOCAyLjJ2LjEiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTQuNiA0NS40di0uMWMxLjMgMCAyLjUtLjQgMy4yLTEuMS40LS40LjUtLjguNS0xLjIgMC0uMSAwLTEuNSAwLTMuMSAwLTIuMyAwLTUuMSAwLTUuMiAwLS40LS4yLS44LS41LTEuMi0uNy0uNy0xLjktMS4xLTMuMi0xLjEtMiAwLTMuNiAxLTMuNyAyLjJ2LjFoLS4xLS4xdi0uMWMuMi0xLjIgMS45LTIuMyAzLjktMi4zIDEuMyAwIDIuNi40IDMuMyAxLjIuNC40LjYuOC42IDEuM3Y1LjIgMy4xYzAgLjQtLjIuOS0uNiAxLjMtLjcuNi0yIDEtMy4zIDF6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE0LjYgMzcuM2MyLjEgMCAzLjctMS4xIDMuNy0yLjVzLTEuNy0yLjUtMy43LTIuNWMtMi4xIDAtMy43IDEuMS0zLjcgMi41IDAgMS4zIDEuNiAyLjUgMy43IDIuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTQuNiAzNy4zYy0xIDAtMi0uMy0yLjctLjctLjctLjUtMS4xLTEuMS0xLjEtMS44IDAtLjUuMi0xIC42LTEuNC43LS43IDEuOS0xLjEgMy4yLTEuMSAxIDAgMiAuMyAyLjcuNy43LjUgMS4xIDEuMSAxLjEgMS44IDAgMS40LTEuNyAyLjUtMy44IDIuNXptMC00LjljLTEuMiAwLTIuNC40LTMuMSAxLjEtLjQuNC0uNi44LS42IDEuMyAwIC42LjQgMS4yIDEuMSAxLjdzMS42LjcgMi42LjdjMiAwIDMuNy0xLjEgMy43LTIuNCAwLS42LS40LTEuMi0xLjEtMS43cy0xLjYtLjctMi42LS43eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xNC42IDM2LjNjMS45IDAgMy40LS45IDMuNC0ycy0xLjUtMi0zLjQtMi0zLjQuOS0zLjQgMiAxLjUgMiAzLjQgMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTQuNiAzNi40Yy0xLjkgMC0zLjUtLjktMy41LTIuMSAwLS40LjItLjcuNS0xIC42LS42IDEuOC0xIDMtMSAuOSAwIDEuOC4yIDIuNC42LjcuNCAxIC45IDEgMS41cy0uNCAxLjEtMSAxLjVjLS42LjItMS41LjUtMi40LjV6bTAtNGMtMS4yIDAtMi4zLjQtMi45IDEtLjMuMy0uNC42LS40IDEgMCAxLjEgMS41IDEuOSAzLjMgMS45LjkgMCAxLjctLjIgMi40LS42LjYtLjQgMS0uOCAxLTEuM3MtLjMtMS0xLTEuM2MtLjctLjUtMS41LS43LTIuNC0uN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMjMuNiAzOC42YzAtMS40LTEuOS0yLjQtNC0yLjQtMiAwLTMuOCAxLTMuOSAyLjN2LjEgOC42YzAgMS40IDEuOCAyLjQgMy45IDIuNHM0LTEuMSA0LTIuNWMuMS0uMiAwLTguNCAwLTguNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTkuNyA0OS42Yy0yLjIgMC00LTEuMi00LTIuNSAwLS4xIDAtNS45IDAtOC41di0uM2MuMi0xLjMgMS45LTIuMyA0LTIuMyAyLjIgMCA0IDEuMiA0IDIuNXY4LjVjMCAxLjUtMS44IDIuNi00IDIuNnptLTMuOS0xMS4xdi4xIDguNWMwIDEuMyAxLjggMi40IDMuOSAyLjQgMi4xIDAgMy45LTEuMSAzLjktMi40IDAtLjIgMC04LjUgMC04LjUgMC0xLjMtMS44LTIuNC0zLjktMi40LTIgMC0zLjcgMS0zLjkgMi4zeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xOS43IDQxLjJjMi4xIDAgMy44LTEuMSAzLjgtMi41cy0xLjctMi41LTMuOC0yLjUtMy44IDEuMS0zLjggMi41IDEuNyAyLjUgMy44IDIuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTkuNyA0MS4zYy0yLjIgMC0zLjktMS4yLTMuOS0yLjYgMC0uNy40LTEuNCAxLjItMS45LjctLjUgMS43LS44IDIuOC0uOCAxIDAgMiAuMyAyLjguOC43LjUgMS4yIDEuMSAxLjIgMS45IDAgLjctLjQgMS40LTEuMiAxLjktLjkuNC0xLjkuNy0yLjkuN3ptMC01LjFjLTEgMC0yIC4zLTIuNy43LS43LjUtMS4xIDEuMS0xLjEgMS43IDAgMS40IDEuNyAyLjUgMy44IDIuNSAxIDAgMi0uMyAyLjctLjcuNy0uNSAxLjEtMS4xIDEuMS0xLjcgMC0uNy0uNC0xLjMtMS4xLTEuNy0uNy0uNS0xLjctLjgtMi43LS44eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xOS43IDQwLjJjMS45IDAgMy41LS45IDMuNS0ycy0xLjYtMi0zLjUtMi0zLjUuOS0zLjUgMiAxLjYgMiAzLjUgMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTkuNyA0MC4zYy0yIDAtMy42LS45LTMuNi0yLjEgMC0uNi40LTEuMSAxLjEtMS41czEuNi0uNiAyLjUtLjZjLjkgMCAxLjguMiAyLjUuNnMxLjEuOSAxLjEgMS41YzAgMS4xLTEuNiAyLjEtMy42IDIuMXptMC00LjFjLS45IDAtMS44LjItMi40LjZzLTEgLjktMSAxLjRjMCAxLjEgMS41IDIgMy40IDJzMy40LS45IDMuNC0yYzAtLjUtLjQtMS0xLTEuNHMtMS41LS42LTIuNC0uNnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTkuNiAzOCAuNC40djEuNmwtMi4yIDEuM3Y4LjlsMS4zLS43cy41LjEgMS4zLS4xdi42bC0uMi43LTcuNiAzLjktMS0uNnYtMTAuNS4xYy02LjItMy42LTEwLjQtMTAtMTAuNi0xNS4yIDAgMCAuMS0xLjIuMS0yIC4xLTExLjQgMTcuOS0yMC42IDM5LjktMjAuNnMzOS41IDguOSAzOS44IDIwLjVjMCAwIC4yIDEuMS4yIDIuNS0uMSA1LjEtNC4zIDExLjEtMTAuNSAxNC43bC0uOC0xLjUuOCAxLjV2MTAuNWwtLjkuNi03LjYtNC0uMy0uNnYtLjRjLjggMCAxLjUtLjIgMS41LS4ybDEuMi42di04LjlsLTIuMi0xLjN2LTEuNWwuNC0uNHMxMS00LjIgMTEuMS0xMy4yYzAtMTMuNi0yNy43LTE3LjctMzIuNS0xNy4xLTQuOS43LTMxLjUgMi4yLTMyLjMgMTcuMi0uMyA1LjIgNCAxMCAxMC43IDEzLjIiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTIuNiA1NC44LTEuMS0uN3YtMTAuNWMtNS45LTMuNC0xMC40LTkuOC0xMC41LTE1LjIgMCAwIC4xLTEuMi4xLTIgMC01LjUgNC4yLTEwLjcgMTEuNy0xNC42czE3LjUtNiAyOC4yLTZoLjFjMTAuNiAwIDIwLjYgMi4xIDI4IDUuOSA3LjUgMy44IDExLjcgOSAxMS44IDE0LjYgMCAwIC4yIDEuMS4yIDIuNS0uMSA1LjItNC4zIDExLjItMTAuNSAxNC43djEwLjVsLTEgLjctNy42LTQuMS0uMy0uNnYtLjRoLjFjLjcgMCAxLjUtLjIgMS41LS4ybDEuMS42di04LjdsLTIuNC0xLjV2LTEuNWwuNC0uNGMuMSAwIDExLTQuMyAxMS4xLTEzLjEgMC0zLjEtMS40LTUuOS00LjItOC4zLTcuNy03LTI0LjMtOS4zLTI4LjEtOC44LS40LjEtLjkuMS0xLjYuMi03LjQuOC0yOS45IDMuMi0zMC42IDE2LjktLjMgNSAzLjcgOS45IDEwLjcgMTMuMWwuNC41djEuNmwtMi4yIDEuM3Y4LjdsMS4zLS42cy41LjEgMS4zIDBoLjF2LjdsLS4zLjd6bS0uOS0uOC45LjYgNy41LTMuOS4yLS43di0uNWMtLjYuMS0xLjEuMS0xLjIgMGwtMS40Ljd2LTlsMi4zLTEuMnYtMS41bC0uNC0uNWMtNy0zLjMtMTEtOC4yLTEwLjgtMTMuMi44LTEzLjggMjMuMy0xNi4zIDMwLjctMTcuMS43LS4xIDEuMi0uMSAxLjYtLjIgMy45LS41IDIwLjUgMS45IDI4LjMgOC44IDIuOCAyLjUgNC4yIDUuMyA0LjIgOC40IDAgMi42LTEgNi40LTUuNiAxMC0yLjYgMi4xLTUuMyAzLjEtNS41IDMuMmwtLjMuNHYxLjRsMi4yIDEuM3Y5bC0xLjItLjZjLS4xIDAtLjcuMi0xLjQuMnYuM2wuMy42IDcuNSA0IC44LS42di0xMC41bC0uNy0xLjQuMS0uMS43IDEuNGM2LjEtMy41IDEwLjItOS40IDEwLjQtMTQuNiAwLTEuMy0uMi0yLjQtLjItMi41LS4zLTExLjQtMTcuOC0yMC4zLTM5LjctMjAuMyAwIDAgMCAwLS4xIDAtMjEuOSAwLTM5LjcgOS4yLTM5LjcgMjAuNSAwIC44LS4xIDItLjEgMiAuMiA1LjQgNC42IDExLjggMTAuNiAxNS4ydi4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im04MC44IDI2LjZjLS4xIDUuMS00LjUgMTEuNy0xMSAxNS4xIiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTY5LjggNDEuOC0uMS0uMWMzLjEtMS42IDUuOS00LjEgNy45LTYuOSAxLjktMi43IDMtNS42IDMuMS04LjJoLjFjLS4xIDIuNi0xLjIgNS41LTMuMSA4LjItMiAyLjktNC44IDUuNC03LjkgN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTIuNCA0MS45Yy02LjktMy41LTExLTEwLjQtMTEuMi0xNS41IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEyLjMgNDJjLTMuMi0xLjYtNi4xLTQuMS04LjEtNy4xLTEuOS0yLjgtMy01LjgtMy4xLTguNWguMWMuMSAyLjYgMS4yIDUuNiAzLjEgOC40IDIuMSAzIDQuOSA1LjUgOC4xIDcuMXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjIuNSAzNy45IDcuMiAzLjkiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjYgMzUuN2guMXY4LjNoLS4xeiIgZmlsbD0iIzAwMzQ3MyIgdHJhbnNmb3JtPSJtYXRyaXgoLjQ4MDkgLS44NzY4IC44NzY4IC40ODA5IC0uNjQwNiA3OC42MjQ5KSIvPjxwYXRoIGQ9Im0xMS43IDQzLjUuOC0xLjUgNy4xLTQgLjQuNCIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xMS43IDQzLjVoLS4xbC44LTEuNiA3LjMtNCAuNC41LS4xLjEtLjQtLjQtNy4xIDMuOXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTIuMiAyMy44YzMuNC0xMi42IDEzLjYtMjMuMyAyOC40LTIzLjIgMTUuMS4xIDI2LjYgMTAuOSAyOS41IDI1LjEgMCAwIC4xIDIuNy0uMiAyLjgtLjIgMC0uOC0xLjktMS4yLTItLjIgMC0uNSAwLS44LS4xLS43LS4xLTEuNS0uMy0yLjEtLjZsLTEuNy4yLTMuOC0xLTIuMyAzLjYtNC43IDEtMTMuMi02LjEtMjEuNi41LTUuMS42LTEuMyAxLjgtLjItLjd6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTI4IDdzLS42LS4yLS44LS4yLS4yLjMtLjMuNS0uNC42LS42LjYtLjIgMC0uNS4yYy0uMy4xLS40LjQtLjQuNnMtLjIuMy0uNC40IDEuMS4zIDEuNC4xYy4yLS4yLjEtLjIuMi0uNHMuMi0uMi4zLS40LS4xLS40LjItLjdjLjMtLjIuNC0uMy41LS41LjItLjIuNC0uMi40LS4yeiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Im00NC4zIDIzLjdzLS4zLjcgMCAuOS43LS4xLjUtLjVjLS4zLS40LS41LS40LS41LS40eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Im01NyAxOS41Yy0uNS4xLS42LjMtLjEgMSAuNC43LjQgMS4xLjQgMS4xcy4xLjQuNS43LjIuNi4yLjdjMCAuMi44LjggMSAuNHMwLTEuMS0uMi0xLjEtLjYuMS0uNi0uMS42LS4zLjYtLjYgMC0uOC0uMi0uNS0uNi44LS42LjhsLS4yLS40LjEtLjctLjQuMnMtLjQgMC0uMi0uM2MuMS0uMy40LTEuNC0uMy0xLjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTM0LjIgMjkuOHMuMS41LS41LjgtMS4xLjMtMS4xLjUuMS45LjIgMS43YzAgLjggMS4xIDEuNiAxLjQuNC40LTEuMi4yLTIuMi4yLTIuMnMuOS0uMy0uMi0xLjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTU2LjUgMjMuMXMtLjUuMi0uOS41Yy0uNC40LS42LjYtMSAuOHMtLjkgMS4yIDAgMS42YzEgLjQgMS44IDEuMiAxLjkuNCAwLS44LjgtMS4yLjQtMS45LS40LS42LS4xLS42IDAtLjguMi0uMi0uMy0uOC0uNC0uNnoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJtNDkuNSAyMy42cy45LjkgMS42IDEuNmMuNi43LjkuOSAxLjMgMS41cy42LjUgMS4xLjZjLjUuMi44LjEgMS44LjQgMS4xLjMgMS42LjQgMiAuMnMtLjgtLjQtMS42LS41LTEuNC0uNC0xLjgtLjYtMS4xLjItLjktLjRjLjItLjctLjQtMS43LS45LTEuOC0uNS0uMi0xLjctLjktMi0xLS4xLS4yLS41LS4zLS42IDB6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTU0LjkgNy42czEuMS45IDEuNCAxLjJjLjMuNC42LjguNyAxLjMuMi40LjcuNi44LjlzLjEuNC40LjhjLjMuMy42IDAgLjMuN3MtLjYgMS4xLS43IDEuMy4xLjYuMS44LjQgMCAuNS0uNC4zLS4zLjctLjUuNi0uNS4yLTEuMS0uNi0xLS44LTEuMS0uNS0uMi0uMy0uMy4zLS44LjEtLjktLjIuNC0uOS0uNGMtLjctLjctLjgtLjYtLjctLjkuMS0uMi0xLjEtMS41LTEuOC0xLjR6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTUzLjYgNC44cy45LjYgMS4zIDEtLjUuMi0uNy4yYy0uMi4xLS4yLjMtLjYuMy0uMyAwIDAgLjMuMS45LjEuNy4xLjcuNCAxcy45LS4yIDEuNS4yYy43LjUgMS4yIDIuNSAxLjIgMi45LjEuNC0uMy40LS43LjctLjMuMyAwIC43LjMgMS4xLjQuNC43IDEuNC41IDEuNi0uMi4xLS40LS4zLS42LS43LS4xLS40LS43LS45LTEuMS0uNy0uMy4xLS42LS4xLS43LS41LS4xLS4zLS40IDAtLjQuNCAwIC41LS42LjQtLjUuNiAwIC4yLjIuMi44LjFzLjcgMCAuNyAwLS4zLjEtLjQuN2MtLjEuNSAxLjEgMS4xIDEuNiAxLjdzLS4zIDEuNi0uNiAxLjljLS4zLjQtMSAuNy0xLjQgMS0uNS40LTEuMS0uMi0xLjEtLjJzLS43IDEuMS0uNyAxLjMuOC4yLjkuNWMuMS4yLjUuOC42IDEuNCAwIC41LTEuMyAxLjItMS4zIDEuMnMtLjUtLjktLjgtMS4yYy0uMy0uNC0uOC0uNC0uOC0uNHMtLjEuNi0uMyAxLjJjLS4xLjYuMy42LjYuOXMuOC41IDEuMS44Yy4zLjIuNC45LjQuOXMtLjMgMC0uNy0uMWMtLjMtLjEtLjMtLjYtLjctMS0uMy0uNS0uOS0uNy0uOS0xLjFzLS4yLTEuMS0uNS0xLjVjLS4zLS41LS4xLS40LS4yLS44cy0uMy4xLS42LjMtLjQgMC0uNC0uNmMtLjEtLjYtLjctLjctLjgtMXMtLjEtLjQtLjQtLjItLjUtLjItLjcuMi0yIDEuNi0yLjIgMS43LS4xLjItLjEuNi0uMy4zLS40LjZjMCAuMyAwIC44LS4yIDEuMS0uMS4yLS4zLjUtLjUuNHMtLjQtLjUtLjQtLjZjLS4xLS4yLS41LTEuNy0uOS0yLjItLjMtLjUtLjMtMS42LS42LTEuNC0uMi4yLS44LjEtLjktLjVzLjYgMCAuNiAwIDAtLjItLjEtLjRjLS4yLS4yLS41LjItLjkgMHMtMS4yLS4zLTIuMi0uMi0xLjEtLjItMS4zLS41LTEgMC0xLjUtLjNjLS42LS4zLS45LS44LTEtLjUgMCAuMy4zIDEuMS4zIDEuMXMuMS0uMS40IDAtLjIuOS4zLjYgMS4xLS41IDEuMS0uNS4yLjUuNS43Yy4yLjIgMSAuNi4zIDEuMi0uNi42LTMuOSAxLjktNC4xIDEuOXMtLjkgMC0uOSAwIC4yLS42LS4zLTEuMmMtLjUtLjctLjctMS42LS45LTIuMS0uMi0uNi0uNi0yLS42LTJsLS4zLjVzLS40LTEuMi0uNC0uNWMwIC40LjkgMy41IDEgNC4xcy45IDEuMSAxLjMgMS44Yy41LjcgMi4yIDAgMi43IDAgLjUuMS0xIDIuMS0xLjUgMi42LS42LjYtMiAxLjUtMi4zIDEuOS0uMi40LS4yIDEuMS4zIDIuMi42IDEuMS0uNiAxLjktMSAyLjMtLjQuNS4xLjUuNCAxLjEuMi42LS45LjQtLjkgMS4yIDAgLjctLjggMi42LTEuNyAyLjhzLTEuNi4yLTIuNC0uOC0uNy0uMi0uOS0uNWMtLjEtLjMtLjItMS42LTEuMy0yLjQtMS4xLS43LS43LTIuMS0uOC0zLjdzLTEuNy0yLjItMS43LTIuNi4zLTEuMi0uMi0xLjktMS4yLTEuNC0xLjktLjktMy4yLjItMy42LS4yYy0uNC0uNSAwLS45LS41LTEuOC0uNi0uOS0uMy0xLjkuMi0yLjRzLjktMiAxLjUtMy4yYy43LTEuMiAyLjUtMiAzLjMtMi40cy42LS41LjktLjUuMi40LjguMmMuNS0uMiAyLjMgMCAzLjEuMnMtLjUgMS4xLS4yIDEuMiAxLjIuOSAxLjYgMS4xLjQtLjMuOS0uMy45LjMgMS42LjUgMS42LjIgMS45IDAgLjktMS4yLjktMS40LTEuMi4xLTEuNy4yLS44LS4zLS44LS43LS41LS40LS42LS4xYzAgLjMtLjUuNi0uNi4zLS4xLS4yLjEtLjUgMC0xIDAtLjUtLjctMi0uNy0ycy0uMS45IDAgMS4xLjQuOS40LjktLjItLjItLjQuMS0xLjEuMi0uOC4yYy4zLS4xLjQtLjYuMy0uOHMtLjUtLjktLjUtMS4zYzAtLjMtLjIgMC0xLS4xLS44IDAtLjUuNS0xLjEuNXMtLjYuMy0xLjEuN2MtLjQuMy0xLjYuMy0xLjguMnMwLS45LjMtMS40IDEuMS0xLjIgMS4xLTEgLjcuNSAxLjUuMmMuOS0uMy42LTEgMS4xLTEuMnMuMyAwIC41LjIuMi0uMi42LS40LjUtLjMgMS4xLS41LjcgMCAxLjEgMCAuMy0uNS43LS44LjIuMi0uMS42Yy0uNC40LjEuNC40LjVzMS4yLjEgMS40LS4xIDEuMS0uNSAyLjEtLjhjMS4xLS4zLS41LS40LS41LS42czEuMi0uNy0uMi0uNWMtMS41LjItLjcuOC0xLjIgMS4zcy0uNi4yLS44LjEtLjEtLjUgMC0uOWMwLS45LS43LS4zLTEtLjVzMC0uNS4zLS42LjQtLjQuNi0uNi41IDAgMS4yLS4yYy43LS4xIDItLjcgMi45LS45LjktLjMgMS4xLjUgMS41LjguNS40LjMuNi0uNS42cy4zLjMgMSAuNGMuNi4xIDEuMS0uMiAyLS41LjktLjIgMS4xLS40IDEuOC0uMS42LjIuMyAwIC45IDBzLjguMS45LS4zLjMtLjQuNS0uOSAxLS41IDEuNy0uOWMuOC0uNCAxLjEuNCAxLjYuM3MxLjMtLjMgMi4zLS40LjItLjQuMi0uNWMwLS4yLjItLjEuNi0uMi40IDAgLjggMCAxLS4yLjEtLjIuNS0uMy41LS4zczEuOS41IDMuNiAxLjR6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTMyLjIgMTEuOXMtLjMuNC4yLjQuOC0uNCAxLS40LS40LjEgMCAuNiAxLjEuNy42LjljLS40LjItLjkuNC0xLjQgMC0uNi0uNC0uOS0uNS0xLjUtLjRzLS45IDAtLjYtLjIgMS41LTEuMyAxLjctLjl6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTM3LjMgMTIuMWMtLjQtLjQtLjgtLjItMS4xIDBzLS44LjEtLjYuNmMuMS41LjYgMSAuNCAxLjNzLS43LjItLjIuNiAxLjMgMSAxLjMuNGMwLS43LS40LS44LS4xLTFzLS4zLS42LS41LS44Yy0uMS0uMiAwLS4zLjUtLjQuMy0uMS43LS4zLjMtLjd6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTYzLjEgMjIuOXMtMS40LS43LS44IDAgLjUgMSAxLjIgMS4yLjkuMy45LjguMy40LjcuNi41LS4zLjktLjJjLjQgMCAuMS41LjguN3MuNCAwIC4zLS41LS4xLS44LS40LTEuMWMtLjMtLjItMi4yLTEuOS0yLjYtMS40LS41LjQtLjkuNi0uOS40LS4xLS4yLjEgMC0uMS0uNXoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJtMzYuMiA0Mi4xIDQuMi0zLjguOC0uN2gtMS01LjMtLjJsLS4xLjEtMy4xIDMuMnYtMi44LS40aC0uNC00LS4zdi40bC4xIDEwLjR2LjRoLjMgNGwuNC0uMXYtLjQtMi42bC45LS44IDIuNSAzLjcuMi4xaC4xIDUuNC43bC0uNS0uN3oiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJtNDcuNSA0MmgtLjR2LjQgMi40LjRoLjQgMmMtLjMuMy0uNy41LTEuNi41cy0xLjYtLjItMi4xLS43Yy0uNC0uNC0uNi0xLS42LTEuOCAwLTEuNy43LTIuNSAyLjMtMi42LjUgMCAuOS4xIDEuMi4yLjIuMS40LjQuNC41bDUuMy0uMWMtLjMtMi44LTIuNi00LjEtNy4zLTQtMS44IDAtNC4yLjQtNS42IDIuMS0uOSAxLTEuMyAyLjMtMS4zIDRzLjUgMyAxLjQgNGMxLjIgMS4zIDMgMS45IDUuNyAxLjkgMi4yIDAgMy41LS40IDQuNS0xLjJsLjMuNS4xLjJoLjIgMS43LjR2LS40bC0uMS01Ljl2LS40aC0uNHoiIGZpbGw9IiNmZmYiLz48ZyBmaWxsPSIjMDAzNDczIj48cGF0aCBkPSJtMzIuNSA0NC41LTEuMyAxLjJ2Mi44aC00bC0uMS0xMC40aDR2My43bDMuNy0zLjdoNS4zbC00LjUgNCA1IDYuM2gtNS4zeiIvPjxwYXRoIGQ9Im00OS41IDQwLjljLS4xLS4yLS4zLS40LS41LS41LS40LS4yLS44LS4yLTEuNC0uMi0xLjYgMC0yLjcuOS0yLjYgMyAwIDEuOSAxIDIuOSAzIDIuOSAxLjMgMCAyLS41IDIuMi0xLjNoLTIuN3YtMi40bDYuOC0uMS4xIDUuOWgtMS43bC0uNS0uOWMtMSAxLTIuMyAxLjMtNC42IDEuNC0yLjggMC02LjYtLjctNi43LTUuNCAwLTQuNSAzLjUtNS42IDYuNi01LjcgNCAwIDYuNCAxLjEgNi44IDMuM3oiLz48cGF0aCBkPSJtMTUgNTcuNCAyLjYtMi44LjguNy0yLjYgMi44eiIvPjxwYXRoIGQ9Im0xNi44IDU5LjEgMi4yLTMuMSAxLjEuOC0uMiAzLjIgMS42LTIuMi44LjYtMi4yIDMuMS0xLjEtLjguMi0zLjItMS42IDIuMnoiLz48cGF0aCBkPSJtMjIuMiA2Mi42IDEuNC0yLjYtMS4zLS43LjQtLjcgMy41IDEuOC0uNC43LTEuMy0uNy0xLjQgMi42eiIvPjxwYXRoIGQ9Im0yNS4zIDY0LjIgMS4zLTMuNSAzIDEuMS0uMy44LTItLjgtLjIuNiAxLjkuNy0uMy43LTEuOS0uNy0uMy43IDIuMS44LS4zLjh6Ii8+PHBhdGggZD0ibTI5LjMgNjUuNiAxLTMuNiAyIC41Yy4zLjEuNS4xLjcuMi4xLjEuMy4xLjQuMnMuMi4yLjMuNHYuNWMtLjEuMy0uMi40LS40LjVzLS41LjEtLjguMWMuMi4xLjQuMi41LjN2LjQuNi45bC0xLjEtLjNjMC0uMSAwLS4yIDAtLjQgMCAwIDAgMCAwLS4xbC4xLS41YzAtLjIgMC0uMy0uMS0uNHMtLjMtLjItLjYtLjJsLS42LS4yLS40IDEuNHptMS44LTIuNy0uMi45LjYuMmMuMy4xLjUuMS43LjEuMSAwIC4yLS4xLjMtLjMgMC0uMiAwLS4zLS4xLS40cy0uMy0uMi0uNi0uM3oiLz48cGF0aCBkPSJtMzMuOSA2Ni44LjUtMy43IDEuNC4yIDEuMyAyLjkuNC0yLjcuOS4xLS41IDMuNy0xLjQtLjItMS4zLTIuOS0uNCAyLjd6Ii8+PHBhdGggZD0ibTM4LjggNjcuNiAxLjktMy44aDEuM2wyIDMuN2gtMS4ybC0uNC0uOC0yIC4xLS4zLjh6bTEuOC0xLjZoMS40bC0uNy0xLjR6Ii8+PHBhdGggZD0ibTQ1LjQgNjcuMS0uNC0yLjktMS40LjItLjEtLjggMy45LS42LjEuOC0xLjUuMi41IDIuOXoiLz48cGF0aCBkPSJtNDguOCA2Ni41LS45LTMuNyAxLS4zLjkgMy43eiIvPjxwYXRoIGQ9Im01MyA2NS40Yy0uNy4yLTEuMi4yLTEuNyAwcy0uOC0uNi0xLTEuMi0uMi0xLjEuMS0xLjVjLjMtLjUuOC0uOCAxLjQtMSAuNy0uMiAxLjMtLjIgMS43IDAgLjUuMi44LjYgMSAxLjJzLjIgMS4xLS4xIDEuNWMtLjIuNC0uNy44LTEuNCAxem0tMS43LTEuNGMuMS40LjMuNi42LjcuMi4xLjYuMS45IDAgLjQtLjEuNi0uMy43LS42LjEtLjIuMS0uNiAwLS45LS4xLS40LS4zLS43LS42LS44cy0uNi0uMi0uOSAwYy0uMy4xLS42LjMtLjcuNnMtLjEuNiAwIDF6Ii8+PHBhdGggZD0ibTU2LjIgNjQuMi0xLjctMy40IDEuMy0uNiAyLjcgMS43LTEuMi0yLjQuOS0uNCAxLjcgMy40LTEuMy41LTIuNy0xLjcgMS4yIDIuNHoiLz48cGF0aCBkPSJtNjAuNSA2Mi0uNS00LjIgMS4xLS43IDMuNiAyLjEtMSAuNy0uNy0uNS0xLjcgMS4xLjEuOHptLjctMi4zIDEuMS0uOC0xLjMtLjh6Ii8+PHBhdGggZD0ibTY1LjIgNTguNy0yLjUtMi45LjgtLjcgMS45IDIuMiAxLjUtMS4zLjUuNnoiLz48L2c+PC9zdmc+" alt="KG International logo">
+        <span class="word"><span class="b1">KG International</span><span class="b2">Grease Fill &amp; Relubrication Calculator</span></span>
+      </a>
+      <div class="header-actions" id="headerActions"></div>
+    </div>
+  </header>
+
+  <!-- ============ GUEST HERO (guest mode only) ============ -->
+  <section class="hero shell-pad" id="heroGuest" hidden>
+    <div class="container hero-container">
+      <div class="hero-inner">
+        <div class="hero-badge">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          KG International &bull; Lubrication Engineering
+        </div>
+        <h1>Precision Bearing Grease Fill &amp; Relubrication Calculator</h1>
+        <p>Eliminate guesswork in rolling bearing lubrication. Accurately calculate initial bearing fill mass, housing cavity quantities, and relubrication intervals based on SKF engineering standards — protecting equipment, preventing premature failures, and maximizing bearing service life.</p>
+        <div class="cta-row">
+          <button type="button" class="btn primary" id="heroCtaStart">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+            Start calculating free
+          </button>
+          <button type="button" class="btn on-hero-outline" id="heroCtaSample">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            See a sample report
+          </button>
+        </div>
+        <div class="trust-strip">
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            633 SKF standard bearing catalog
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Metallic &amp; non-metallic cage logic
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Instant PDF engineering reports
+          </span>
+          <span>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Zero spreadsheets needed
+          </span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <main class="shell-pad" style="flex:1">
+    <div class="container">
+
+      <!-- ============ WIZARD (shared by guest + app modes) ============ -->
+      <div id="wizardArea">
+        <div class="workspace">
+          <div style="display:flex; flex-direction:column; gap:18px; min-width:0">
+
+            <nav class="stepper" id="stepper" aria-label="Report steps">
+              <button type="button" class="step-tab active" data-step="1"><span class="step-track"></span><span class="circle">1</span><span class="lbl">Bearing</span></button>
+              <button type="button" class="step-tab" data-step="2"><span class="step-track"></span><span class="circle">2</span><span class="lbl">Housing &amp; relube</span></button>
+              <button type="button" class="step-tab" data-step="3"><span class="step-track"></span><span class="circle">3</span><span class="lbl">Review</span></button>
+              <button type="button" class="step-tab" data-step="4"><span class="step-track"></span><span class="circle">4</span><span class="lbl">Report</span></button>
+            </nav>
+
+            <div class="banner ok" id="banner"><span class="dot"></span><span id="bannerText">Checking inputs…</span></div>
+
+            <!-- STEP 1 — always unlocked -->
+            <section class="card step" id="step-1">
+              <div class="card-head"><span class="num">1</span><h2>Bearing &amp; lubrication type</h2></div>
+              <p class="card-note">Search a designation from the SKF Bearing Database (633 records). Type, dimensions and mass fill in automatically.</p>
+
+              <div class="grid">
+                <div class="field" id="referenceField" hidden>
+                  <label for="referenceInput">Prepared for (customer / job reference) — optional</label>
+                  <input type="text" id="referenceInput" autocomplete="off" placeholder="e.g. Acme Mills — Line 4 conveyor drive" />
+                </div>
+
+                <div class="field combo" style="grid-column:1 / -1">
+                  <label for="designationInput">Bearing designation</label>
+                  <input type="text" id="designationInput" autocomplete="off" placeholder="e.g. 22320 EK" />
+                  <div class="combo-list" id="comboList" hidden></div>
+                  <div class="hint" id="designationHint"></div>
+                </div>
+
+                <div class="readout"><label>Bearing type</label><div class="box"><span class="v" id="outType">—</span></div></div>
+                <div class="readout"><label>Bearing mass, M</label><div class="box"><span class="v" id="outMass">—</span><span class="u">kg</span></div></div>
+                <div class="readout"><label>Bore diameter, d</label><div class="box"><span class="v" id="outD">—</span><span class="u">mm</span></div></div>
+                <div class="readout"><label>Outside diameter, D</label><div class="box"><span class="v" id="outDD">—</span><span class="u">mm</span></div></div>
+                <div class="readout"><label>Bearing width, B</label><div class="box"><span class="v" id="outB">—</span><span class="u">mm</span></div></div>
+
+                <div class="field">
+                  <label for="cageSelect">Cage material</label>
+                  <select id="cageSelect"><option>Metallic cage</option><option>Non-metallic cage</option></select>
+                </div>
+                <div class="field">
+                  <label for="greaseSelect">Grease type</label>
+                  <select id="greaseSelect"><option>Standard grease</option><option>Fluorinated grease</option></select>
+                </div>
+              </div>
+
+              <div class="step-nav">
+                <span></span>
+                <button type="button" class="btn primary" id="toStep2">Continue to housing &amp; relubrication →</button>
+              </div>
+            </section>
+
+            <!-- STEP 2 -->
+            <section class="card step" id="step-2" hidden>
+              <div class="card-head"><span class="num">2</span><h2>Housing &amp; relubrication selections</h2></div>
+
+              <div class="unlocked-content">
+                <p class="card-note">Tell us how the bearing is housed and how it should be relubricated in service.</p>
+                <div class="grid">
+                  <div class="field">
+                    <label for="housingSelect">Housing type</label>
+                    <select id="housingSelect"><option>Customer-designed housing</option><option>SKF plummer block housing</option></select>
+                  </div>
+                  <div class="field">
+                    <label for="fillInput">Housing free-space filling</label>
+                    <div class="unit-row"><input type="number" id="fillInput" value="30" min="0" max="100" step="1" /><span class="unit">%</span></div>
+                  </div>
+                  <div class="field">
+                    <label for="intervalInput">Relubrication interval</label>
+                    <div class="unit-row"><input type="number" id="intervalInput" value="2000" min="0" step="50" /><span class="unit">hours</span></div>
+                  </div>
+                  <div class="field">
+                    <label for="pctInput">Percentage of initial bearing fill</label>
+                    <div class="unit-row"><input type="number" id="pctInput" value="20" min="0" max="100" step="1" /><span class="unit">%</span></div>
+                  </div>
+                  <div class="field" style="grid-column:1 / -1">
+                    <label>Recommendation method</label>
+                    <div class="toggle" id="methodToggle">
+                      <button type="button" data-method="SKF general formula" class="on">SKF general formula</button>
+                      <button type="button" data-method="Percentage-based">Percentage-based</button>
+                    </div>
+                  </div>
+                </div>
+                <div class="step-nav">
+                  <button type="button" class="btn ghost" id="backStep1">← Back</button>
+                  <button type="button" class="btn primary" id="toStep3">Continue to review →</button>
+                </div>
+              </div>
+
+              <div class="locked-content" hidden>
+                <div class="lock-wrap">
+                  <div class="lock-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 118 0v4"/></svg></div>
+                  <h3>Housing &amp; relubrication selections are for account holders</h3>
+                  <p>Create a free account to choose housing type, fill %, relubrication interval and method — using the bearing you just searched.</p>
+                  <div class="teaser-row" id="teaserRowStep2"></div>
+                  <button type="button" class="btn primary create-account-cta" data-return-step="2">Create free account — it's free →</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- STEP 3 -->
+            <section class="card step" id="step-3" hidden>
+              <div class="card-head"><span class="num">3</span><h2>Calculation review</h2></div>
+
+              <div class="unlocked-content">
+                <p class="card-note">V = (π⁄4) × B × (D² − d²) × 10⁻³ − M ⁄ (7.8 × 10⁻³), valid for metallic-cage bearings only.</p>
+                <div class="grid">
+                  <div class="readout"><label>Bearing free volume, V</label><div class="box"><span class="v" id="outV">—</span><span class="u">cm³</span></div></div>
+                  <div class="readout"><label>Grease density factor</label><div class="box"><span class="v" id="outFactor">—</span><span class="u">g/cm³</span></div></div>
+                  <div class="readout"><label>Initial bearing grease</label><div class="box"><span class="v" id="outInitialBearing">—</span><span class="u">g</span></div></div>
+                  <div class="readout"><label>Estimated total housing free volume</label><div class="box"><span class="v" id="outHousingVol">—</span><span class="u">cm³</span></div></div>
+                  <div class="readout"><label>Grease volume per housing side</label><div class="box"><span class="v" id="outVolPerSide">—</span><span class="u">cm³</span></div></div>
+                  <div class="readout"><label>Grease mass per housing side</label><div class="box"><span class="v" id="outMassPerSide">—</span><span class="u">g</span></div></div>
+                  <div class="readout" style="grid-column:1 / -1"><label>Total initial grease (bearing + both housing sides)</label><div class="box"><span class="v" id="outTotalInitial">—</span><span class="u">g</span></div></div>
+                  <div class="readout"><label>SKF general formula, Gp = 0.005 × D × B</label><div class="box"><span class="v" id="outGp">—</span><span class="u">g</span></div></div>
+                  <div class="readout"><label>Percentage-based result</label><div class="box"><span class="v" id="outPctResult">—</span><span class="u">g</span></div></div>
+                  <div class="readout" style="grid-column:1 / -1"><label>Selected final relubrication quantity</label><div class="box"><span class="v" id="outFinalQty">—</span><span class="u">g</span></div></div>
+                </div>
+                <div class="step-nav">
+                  <button type="button" class="btn ghost" id="backStep2">← Back</button>
+                  <button type="button" class="btn primary" id="toStep4">Generate report →</button>
+                </div>
+              </div>
+
+              <div class="locked-content" hidden>
+                <div class="lock-wrap">
+                  <div class="lock-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 118 0v4"/></svg></div>
+                  <h3>Full calculation breakdown is for account holders</h3>
+                  <p>Free volume, initial fill mass, housing grease and relubrication quantities — unlocked once you create a free account.</p>
+                  <button type="button" class="btn primary create-account-cta" data-return-step="3">Create free account — it's free →</button>
+                </div>
+              </div>
+            </section>
+
+            <!-- STEP 4 -->
+            <section class="card step" id="step-4" hidden>
+              <div class="card-head"><span class="num">4</span><h2>Results report</h2></div>
+
+              <div class="unlocked-content">
+                <p class="card-note">Final summary — download it as a PDF to keep with the application record.</p>
+                <div class="report-head">
+                  <div><div class="hint" id="reportFor" style="margin:0 0 4px"></div><div class="big" id="dBearing">—</div></div>
+                </div>
+                <div class="dash">
+                  <div class="tile"><span class="t-label">Bearing free volume</span><span class="t-value" id="dVolume">—<small>cm³</small></span></div>
+                  <div class="tile"><span class="t-label">Initial bearing grease</span><span class="t-value" id="dInitial">—<small>g</small></span></div>
+                  <div class="tile"><span class="t-label">Housing — drive side</span><span class="t-value" id="dDrive">—<small>g</small></span></div>
+                  <div class="tile"><span class="t-label">Housing — non-drive side</span><span class="t-value" id="dNonDrive">—<small>g</small></span></div>
+                  <div class="tile"><span class="t-label">Total housing grease</span><span class="t-value" id="dHousingTotal">—<small>g</small></span></div>
+                  <div class="tile hero-tile"><span class="t-label">Total initial grease requirement</span><span class="t-value" id="dGrandTotal">—<small>g</small></span></div>
+                  <div class="tile"><span class="t-label">KG relubrication quantity</span><span class="t-value" id="dGp">—<small>g</small></span></div>
+                  <div class="tile"><span class="t-label">Percentage-based quantity</span><span class="t-value" id="dPct">—<small>g</small></span></div>
+                  <div class="tile hero-tile"><span class="t-label">Selected final relubrication</span><span class="t-value" id="dFinal">—<small>g</small></span></div>
+                  <div class="tile"><span class="t-label">Housing filling percentage</span><span class="t-value" id="dFillPct">—</span></div>
+                  <div class="tile"><span class="t-label">Relubrication interval</span><span class="t-value" id="dInterval">—<small>hours</small></span></div>
+                </div>
+                <details class="assumptions">
+                  <summary>Assumptions &amp; engineering limitations</summary>
+                  <ol>
+                    <li>The free-volume equation shown is intended for bearings with a metallic cage.</li>
+                    <li>For non-metallic cages, obtain bearing-specific guidance or internal free-volume data.</li>
+                    <li>Housing grease quantities are estimates — actual housing cavity dimensions are not entered.</li>
+                    <li>SKF plummer-block housings are generally only partly filled; follow the applicable housing instructions and selected filling percentage.</li>
+                    <li>Relubrication quantity and interval depend on speed, temperature, contamination, orientation, sealing, grease type and operating conditions.</li>
+                    <li>All outputs are approximate engineering estimates and should be verified before use.</li>
+                  </ol>
+                </details>
+                <div class="step-nav">
+                  <button type="button" class="btn ghost" id="backStep3">← Back</button>
+                  <div class="download-row">
+                    <span class="save-status" id="saveStatus"></span>
+                    <button type="button" class="btn primary icon-btn" id="downloadPdf">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4M5 19h14"/></svg>Download PDF report
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="locked-content" hidden>
+                <div class="lock-wrap">
+                  <div class="lock-icon"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 118 0v4"/></svg></div>
+                  <h3>The downloadable PDF report is for account holders</h3>
+                  <ul class="lock-list">
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Full results dashboard, laid out for the record</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Branded PDF you can file or send to a client</li>
+                    <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>Assumptions &amp; engineering notes included</li>
+                  </ul>
+                  <button type="button" class="btn primary create-account-cta" data-return-step="4">Create free account — it's free →</button>
+                </div>
+              </div>
+            </section>
+
+          </div>
+
+          <!-- ============ Sidebar snapshot ============ -->
+          <div class="side-sticky">
+            <div class="snap-card">
+              <h3>Live snapshot</h3>
+              <div class="snap-row"><span class="k">Bearing</span><span class="v" id="snapBearing">—</span></div>
+              <div class="snap-row"><span class="k">Type</span><span class="v" id="snapType">—</span></div>
+              <div class="snap-row"><span class="k">d × D × B</span><span class="v" id="snapDims">—</span></div>
+              <div class="snap-row"><span class="k">Initial bearing grease</span><span class="v" id="snapInitial">—</span></div>
+              <div class="snap-row"><span class="k">Total initial grease</span><span class="v" id="snapTotal">—</span></div>
+              <div class="snap-row"><span class="k">Final relubrication</span><span class="v" id="snapFinal">—</span></div>
+              <div class="snap-cta" id="snapCta" hidden>
+                <button type="button" class="btn primary block create-account-cta" data-return-step="2">Unlock full results — free</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ SIGNUP ============ -->
+      <div class="signup-wrap" id="signupArea" hidden>
+        <div class="card signup-card">
+          <div class="signup-head">
+            <h2>Create your free KG calculator account</h2>
+            <p>Takes under a minute. Unlocks housing &amp; relubrication calculations and the downloadable PDF report.</p>
+          </div>
+          <form id="signupForm" style="display:flex; flex-direction:column; gap:14px; margin-top:16px">
+            <div class="grid">
+              <div class="field"><label for="leadName">Full name <span class="req">*</span></label><input type="text" id="leadName" required autocomplete="name" /></div>
+              <div class="field"><label for="leadEmail">Work email <span class="req">*</span></label><input type="email" id="leadEmail" required autocomplete="email" /></div>
+              <div class="field"><label for="leadCompany">Company / organization <span class="req">*</span></label><input type="text" id="leadCompany" required autocomplete="organization" /></div>
+              <div class="field"><label for="leadTitle">Job title</label><input type="text" id="leadTitle" autocomplete="organization-title" /></div>
+              <div class="field"><label for="leadPhone">Phone</label><input type="tel" id="leadPhone" autocomplete="tel" /></div>
+              <div class="field"><label for="leadCountry">Country / region</label><input type="text" id="leadCountry" placeholder="e.g. UAE, Saudi Arabia, India…" /></div>
+              <div class="field" style="grid-column:1 / -1">
+                <label for="leadIndustry">Application / industry <span class="req">*</span></label>
+                <select id="leadIndustry" required>
+                  <option value="" disabled selected>Select one…</option>
+                  <option>Automotive aftermarket</option>
+                  <option>Industrial / manufacturing</option>
+                  <option>Mining &amp; material handling</option>
+                  <option>Oil &amp; gas</option>
+                  <option>Marine</option>
+                  <option>Agriculture</option>
+                  <option>Other</option>
+                </select>
+              </div>
+            </div>
+            <label class="checkline"><input type="checkbox" id="leadConsent" required />I agree to be contacted by KG International about this report and related products.</label>
+            <div id="signupError" class="banner danger" hidden><span class="dot"></span><span></span></div>
+            <button type="submit" class="btn primary block">Create free account &amp; continue →</button>
+            <p class="field hintline" style="text-align:center">We'll only use these details to personalize your calculator and relubrication report. No spam.</p>
+          </form>
+        </div>
+      </div>
+
+      <!-- ============ ADMIN ============ -->
+      <div class="admin-wrap" id="adminArea" hidden>
+        <div>
+          <h2 style="font-size:20px; font-weight:700">Admin — signups &amp; report activity</h2>
+          <p class="card-note" style="margin-top:4px">Visible to KG team members with edit access to this prototype. Rows tagged <span class="sample-tag">SAMPLE</span> are example data seeded for this walkthrough.</p>
+        </div>
+        <div id="adminGate">
+          <div class="admin-restricted">
+            <div class="lock-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="9" rx="2"/><path d="M8 11V7a4 4 0 118 0v4"/></svg></div>
+            <div id="adminGateText">Checking admin access…</div>
+          </div>
+        </div>
+        <div id="adminContent" hidden>
+          <div class="admin-metrics">
+            <div class="admin-metric"><div class="m-label">Total signups</div><div class="m-value" id="metricLeads">—</div></div>
+            <div class="admin-metric"><div class="m-label">PDF reports downloaded</div><div class="m-value" id="metricDownloads">—</div></div>
+            <div class="admin-metric"><div class="m-label">Signup → download rate</div><div class="m-value" id="metricConversion">—</div></div>
+            <div class="admin-metric"><div class="m-label">Most requested bearing</div><div class="m-value" id="metricTopBearing" style="font-size:18px">—</div></div>
+          </div>
+          <div class="admin-tables">
+            <div class="card">
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:10px">Signups</h3>
+              <div class="table-wrap"><table class="data-table" id="leadsTable"><thead><tr><th>Name</th><th>Company</th><th>Industry</th><th>Country</th><th>Email</th><th>Signed up</th></tr></thead><tbody></tbody></table></div>
+            </div>
+            <div class="card">
+              <h3 style="font-size:14px; font-weight:700; margin-bottom:10px">PDF downloads</h3>
+              <div class="table-wrap"><table class="data-table" id="downloadsTable"><thead><tr><th>Bearing</th><th>Requested by</th><th>Company</th><th>Final relube</th><th>Total initial</th><th>Downloaded</th></tr></thead><tbody></tbody></table></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="sitefoot shell-pad">
+    <div class="container sitefoot-inner">
+      <div class="fbrand"><img src="data:image/svg+xml;base64,PHN2ZyBlbmFibGUtYmFja2dyb3VuZD0ibmV3IDAgMCA4MiA2OSIgdmlld0JveD0iMCAwIDgyIDY5IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxwYXRoIGQ9Im00MC44IDU5LjljMTYuMiAwIDI5LjQtMTMuMiAyOS40LTI5LjQgMC0xNi4zLTEzLjItMjkuNC0yOS40LTI5LjRzLTI5LjQgMTMuMi0yOS40IDI5LjRjMCAxNi4zIDEzLjIgMjkuNCAyOS40IDI5LjR6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTYyLjggMzUuOWMtLjItLjEtLjggMC0uNy0uNHMuMS0uNCAwLS44YzAtLjQuMi0xLS4yLS43cy0uNS41LS41LjUgMC0xLjMtLjUtMS4zLS44LjQtMS4yLjQtLjcgMC0xIC4yYy0uMi4yLTIgLjctMi4yIDBzLjEtMS42IDAtMi40IDEuNi0xLjcgMi4yLTEuOWMuNi0uMy44LTEuMSAxLjMtMS4zLjUtLjMuNC0uOC43LS42LjMuMS43LjQgMS4yLS4ycy0uMS0xLjEuOS0uOGMxIC40LjUuNC43IDEgLjMuNS41IDEuMS45LjkuNC0uMSAxLTEuOCAxLTIuMXMuNi45LjYgMS43LS4xIDEuMS4zIDEuOC45IDEuNC40IDIuMi0uMiAxLjItMSAyYy0uOC41LTIgMi41LTIuOSAxLjh6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTcwLjYgNTRzMTAuNC02LjQgMTAuNC0xMy4ydi0xMi4xYy0uNCAzLjItMi4zIDguOC0xMC41IDEzLjQiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzAuNiA1NC0uMS0uMWMuMS0uMSAxMC40LTYuNSAxMC40LTEzLjJ2LTExLjNjLS43IDMuNy0zLjEgOC42LTEwLjQgMTIuNmgtLjFjNy44LTQuMyAxMC05LjcgMTAuNS0xMy4zaC4xdjEyLjFjMCA2LjctMTAuMyAxMy4yLTEwLjQgMTMuMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTEuNyA1NC4xcy0xMC43LTYuMS0xMC42LTEzLjN2LTEyLjFjLjYgMy43IDIuNSA5LjIgMTAuNyAxMy44IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTExLjYgNTQuMWMtLjEgMC0xMC43LTYuMi0xMC42LTEzLjN2LTEyLjFoLjFjLjkgNS43IDQuNCAxMC4yIDEwLjYgMTMuN2wtLjEuMWMtNi0zLjQtOS41LTcuNi0xMC42LTEzLjF2MTEuNGMwIDcgMTAuNiAxMy4yIDEwLjcgMTMuMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjIuOCA0OC41aDIuNHYxLjhoLTIuNHoiIGZpbGw9IiNjMmM0YzYiIHRyYW5zZm9ybT0ibWF0cml4KDEgLS4wMDI1OTM3NSAuMDAyNTkzNzUgMSAtLjEyOCAuMTY2MikiLz48cGF0aCBkPSJtNjIuOCA1MC40di0xLjloMi41djEuOXptLjEtMS44djEuN2gyLjN2LTEuN3oiLz48cGF0aCBkPSJtNjAuNyAxMi41YzAtLjcgMS0xLjMgMi4xLTEuM3MyIC41IDIuMSAxLjJ2NC42YzAgLjctMSAxLjMtMi4xIDEuM3MtMi4xLS42LTIuMS0xLjNjMCAwIDAtNC40IDAtNC41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Mi44IDE4LjRjLTEuMiAwLTIuMi0uNi0yLjItMS40IDAgMCAwLTEuMiAwLTIuM3MwLTIuMiAwLTIuM2MwLS4zLjEtLjUuMy0uNy40LS40IDEuMS0uNiAxLjgtLjYgMS4xIDAgMiAuNSAyLjEgMS4ydi4xIDQuNmMuMi44LS44IDEuNC0yIDEuNHptMC03LjFjLS43IDAtMS40LjItMS43LjYtLjIuMi0uMy40LS4zLjZ2Mi4zIDIuM2MwIC43LjkgMS4yIDIgMS4yczItLjYgMi0xLjJjMCAwIDAtNC40IDAtNC42IDAtLjctLjktMS4yLTItMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02Mi44IDEzLjljLTEuMSAwLTItLjYtMi0xLjNzLjktMS4zIDItMS4zIDIgLjYgMiAxLjNjLjEuNy0uOCAxLjMtMiAxLjN6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTYyLjggMTRjLS43IDAtMS40LS4yLTEuNy0uNi0uMi0uMi0uNC0uNS0uNC0uOHMuMS0uNi40LS44Yy40LS40IDEtLjYgMS43LS42IDEuMiAwIDIuMS42IDIuMSAxLjQgMCAuNy0uOSAxLjQtMi4xIDEuNHptMC0yLjdjLS43IDAtMS4zLjItMS43LjYtLjIuMi0uMy40LS4zLjcgMCAuMi4xLjUuMy43LjQuNCAxIC42IDEuNy42IDEuMSAwIDItLjYgMi0xLjNzLS45LTEuMy0yLTEuM3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjIuOCAxMy40Yy0xIDAtMS45LS41LTEuOS0xLjFzLjgtMS4xIDEuOS0xLjFjMSAwIDEuOS41IDEuOSAxLjFzLS44IDEuMS0xLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Mi44IDEzLjVjLS43IDAtMS4zLS4yLTEuNy0uNi0uMi0uMi0uMy0uNC0uMy0uNiAwLS42LjktMS4yIDEuOS0xLjIgMS4xIDAgMS45LjUgMS45IDEuMi4yLjYtLjcgMS4yLTEuOCAxLjJ6bTAtMi4yYy0xIDAtMS44LjUtMS44IDEgMCAuMi4xLjMuMi41LjMuMy45LjUgMS42LjUgMSAwIDEuOC0uNSAxLjgtMSAwLS42LS44LTEtMS44LTF6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTY4LjEgMTguOWMwIC43LTEgMS4zLTIuMSAxLjNzLTIuMS0uNi0yLjEtMS4zYzAtLjEgMC00LjQgMC00LjUgMC0uNyAxLTEuMyAyLjEtMS4zczIgLjUgMi4xIDEuMiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Ni4xIDIwLjNjLS43IDAtMS40LS4yLTEuOC0uNi0uMi0uMi0uMy0uNS0uMy0uN3YtLjRjMC0xLjEgMC00IDAtNC4xIDAtLjMuMS0uNS4zLS43LjQtLjQgMS4xLS42IDEuOC0uNiAxLjEgMCAyIC41IDIuMSAxLjJ2LjFoLS4xLS4xdi0uMWMtLjEtLjYtMS0xLjItMi0xLjItLjcgMC0xLjQuMi0xLjcuNi0uMi4yLS4zLjQtLjMuNnY0LjEuNGMwIC4yLjEuNC4zLjYuNC40IDEgLjYgMS43LjYgMS4xIDAgMi0uNiAyLTEuMmguMWMuMS43LS45IDEuNC0yIDEuNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjYuMSAxNS44Yy0xLjEgMC0yLS42LTItMS4zcy45LTEuMyAyLTEuMyAyIC42IDIgMS4zLS45IDEuMy0yIDEuM3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjYuMSAxNS44Yy0xLjIgMC0yLjEtLjYtMi4xLTEuNHMuOS0xLjQgMi4xLTEuNGMuNiAwIDEuMS4xIDEuNS40cy42LjYuNiAxYzAgLjgtMSAxLjQtMi4xIDEuNHptMC0yLjdjLTEuMSAwLTIgLjYtMiAxLjNzLjkgMS4zIDIgMS4zIDItLjYgMi0xLjNjMC0uMy0uMi0uNy0uNi0uOXMtLjktLjQtMS40LS40eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02Ni4xIDE1LjJjLTEgMC0xLjktLjUtMS45LTEuMXMuOC0xLjEgMS45LTEuMWMxIDAgMS45LjUgMS45IDEuMS0uMS43LS45IDEuMS0xLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02Ni4xIDE1LjNjLTEuMSAwLTEuOS0uNS0xLjktMS4yIDAtLjYuOC0xLjIgMS45LTEuMi43IDAgMS4zLjIgMS42LjYuMi4yLjMuNC4zLjYgMCAuNy0uOSAxLjItMS45IDEuMnptMC0yLjJjLTEgMC0xLjguNS0xLjggMSAwIC42LjggMSAxLjggMSAxIDAgMS44LS41IDEuOC0xIDAtLjItLjEtLjMtLjItLjUtLjQtLjMtMS0uNS0xLjYtLjV6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTY5IDIzLjFjLTEuMyAwLTIuNC0uNy0yLjQtMS41IDAtLjEgMC01IDAtNS4xIDAtLjggMS4xLTEuNSAyLjQtMS41IDEuMiAwIDIuMy42IDIuNCAxLjQiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjkgMjMuMmMtMS4zIDAtMi40LS43LTIuNC0xLjUgMC0uMSAwLTUuMSAwLTUuMSAwLS44IDEuMS0xLjUgMi40LTEuNSAxLjIgMCAyLjMuNiAyLjQgMS4zdi4xbC0uMS4xdi0uMWMtLjEtLjctMS4xLTEuMy0yLjMtMS4zLTEuMyAwLTIuMy42LTIuMyAxLjR2NS4xYzAgLjggMS4xIDEuNCAyLjMgMS40eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02OSAxOC4xYy0xLjMgMC0yLjMtLjctMi4zLTEuNXMxLTEuNSAyLjMtMS41IDIuMy43IDIuMyAxLjVjLjEuOC0xIDEuNS0yLjMgMS41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02OSAxOC4yYy0xLjMgMC0yLjQtLjctMi40LTEuNnMxLjEtMS42IDIuNC0xLjZjLjggMCAxLjUuMyAyIC43LjMuMy40LjYuNC45cy0uMS42LS40LjljLS40LjQtMS4yLjctMiAuN3ptMC0zLjFjLTEuMiAwLTIuMy43LTIuMyAxLjVzMSAxLjUgMi4yIDEuNWMuOCAwIDEuNS0uMiAxLjktLjcuMi0uMi40LS41LjQtLjhzLS4xLS42LS40LS44Yy0uMy0uNC0xLS43LTEuOC0uN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjkgMTcuNWMtMS4yIDAtMi4xLS41LTIuMS0xLjJzLjktMS4yIDIuMS0xLjIgMi4xLjUgMi4xIDEuMi0uOSAxLjItMi4xIDEuMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjkgMTcuNmMtLjggMC0xLjUtLjItMS45LS42LS4yLS4yLS4zLS40LS4zLS43IDAtLjQuMi0uNy42LS45cy45LS40IDEuNS0uNGMuNiAwIDEuMS4xIDEuNS40LjQuMi42LjYuNi45IDAgLjItLjEuNS0uMy43LS4yLjQtLjkuNi0xLjcuNnptMC0yLjVjLS42IDAtMS4xLjEtMS41LjQtLjMuMi0uNS41LS41LjggMCAuMi4xLjQuMy42LjQuNCAxIC42IDEuOC42LjcgMCAxLjQtLjIgMS44LS42LjItLjIuMy0uNC4zLS42IDAtLjMtLjItLjYtLjYtLjgtLjUtLjItMS0uNC0xLjYtLjR6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTcxLjMgMjUuOWMtMS4zIDAtMi40LS43LTIuNC0xLjUgMC0uMSAwLTUgMC01LjEgMC0uOCAxLjEtMS41IDIuNC0xLjUgMS4yIDAgMi4zLjYgMi40IDEuNHY1LjIiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzEuMyAyNmMtLjggMC0xLjYtLjMtMi4xLS43LS4yLS4yLS40LS41LS40LS44IDAtLjEgMC0zLjUgMC00Ljd2LS40YzAtLjQuMy0uOC43LTEuMS41LS4zIDEuMS0uNCAxLjctLjQgMS4zIDAgMi4zLjYgMi40IDEuNHYyLjQgMi43aC0uMXMwLTEgMC0yLjdjMC0xLjIgMC0yLjQgMC0yLjQtLjEtLjctMS4xLTEuMy0yLjMtMS4zLS42IDAtMS4yLjItMS42LjQtLjQuMy0uNy42LS43IDF2LjQgNC43YzAgLjIuMS41LjMuNy40LjQgMS4yLjcgMiAuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzEuMyAyMC45Yy0xLjMgMC0yLjMtLjctMi4zLTEuNXMxLTEuNSAyLjMtMS41IDIuMy43IDIuMyAxLjUtMSAxLjUtMi4zIDEuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzEuMyAyMC45Yy0uOCAwLTEuNS0uMy0yLS43LS4zLS4zLS40LS42LS40LS45cy4xLS42LjQtLjljLjQtLjQgMS4yLS43IDItLjcuOCAwIDEuNS4zIDIgLjcuMy4zLjQuNi40LjlzLS4xLjYtLjQuOWMtLjUuNS0xLjIuNy0yIC43em0wLTNjLS44IDAtMS41LjMtMS45LjctLjIuMi0uNC41LS40LjhzLjEuNi40LjhjLjQuNCAxLjEuNyAxLjkuNy44IDAgMS41LS4zIDEuOS0uNy4yLS4yLjQtLjUuNC0uOHMtLjEtLjYtLjQtLjhjLS40LS41LTEuMS0uNy0xLjktLjd6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTcxLjMgMjAuM2MtMS4yIDAtMi4xLS41LTIuMS0xLjJzLjktMS4yIDIuMS0xLjIgMi4xLjYgMi4xIDEuMi0uOSAxLjItMi4xIDEuMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzEuMyAyMC4zYy0uNiAwLTEuMS0uMS0xLjUtLjQtLjQtLjItLjYtLjYtLjYtLjkgMC0uNyAxLTEuMyAyLjItMS4zIDEuMiAwIDIuMi42IDIuMiAxLjMtLjEuOC0xLjEgMS4zLTIuMyAxLjN6bTAtMi40Yy0xLjEgMC0yIC41LTIgMS4yIDAgLjMuMi42LjYuOHMuOS40IDEuNS40YzEuMSAwIDItLjUgMi0xLjItLjEtLjctMS0xLjItMi4xLTEuMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzMuMSAzMC42Yy0xLjYgMC0yLjktLjgtMi45LTEuOCAwLS4xIDAtNi4yIDAtNi4zIDAtMSAxLjQtMS44IDIuOS0xLjhzMi44LjggMi45IDEuNyIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im03My4xIDMwLjdjLTEuNiAwLTMtLjktMy0xLjkgMC0uMSAwLTYuMyAwLTYuMyAwLTEgMS40LTEuOSAzLTEuOSAxLjUgMCAyLjguOCAyLjkgMS43di4xaC0uMXYtLjFjLS4xLS45LTEuMy0xLjYtMi44LTEuNi0xLjUgMC0yLjkuOC0yLjkgMS43djYuM2MwIC45IDEuMyAxLjcgMi45IDEuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzMuMSAyNC40Yy0xLjYgMC0yLjgtLjgtMi44LTEuOSAwLTEgMS4zLTEuOSAyLjgtMS45IDEuNiAwIDIuOC44IDIuOCAxLjlzLTEuMyAxLjktMi44IDEuOXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzMuMSAyNC41Yy0uOCAwLTEuNS0uMi0yLS42LS42LS40LS45LS45LS45LTEuNHMuMy0xIC45LTEuNGMuNS0uNCAxLjMtLjYgMi0uNiAxIDAgMS45LjMgMi40LjkuMy4zLjUuNy41IDEuMXMtLjIuOC0uNSAxLjFjLS41LjYtMS40LjktMi40Ljl6bTAtMy44Yy0uOCAwLTEuNS4yLTIgLjVzLS44LjgtLjggMS4zLjMuOS44IDEuM2MuNS4zIDEuMi41IDIgLjUuOSAwIDEuOC0uMyAyLjMtLjguMy0uMy40LS42LjQtMXMtLjItLjctLjQtMWMtLjUtLjUtMS40LS44LTIuMy0uOHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzMuMSAyMy43Yy0xLjQgMC0yLjYtLjctMi42LTEuNXMxLjItMS41IDIuNi0xLjUgMi42LjcgMi42IDEuNS0xLjIgMS41LTIuNiAxLjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTczLjEgMjMuOGMtLjcgMC0xLjQtLjItMS45LS41cy0uOC0uNy0uOC0xLjFjMC0uOSAxLjItMS42IDIuNy0xLjYuOSAwIDEuOC4zIDIuMy44LjIuMi40LjUuNC44LS4xLjktMS4zIDEuNi0yLjcgMS42em0wLTMuMWMtMS40IDAtMi41LjYtMi41IDEuNCAwIC40LjMuNy43IDEgLjUuMyAxLjEuNCAxLjguNCAxLjQgMCAyLjUtLjcgMi41LTEuNCAwLS4zLS4xLS41LS4zLS43LS41LS40LTEuMy0uNy0yLjItLjd6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTczLjQgMzUuNWMtMS43IDAtMy4zLS45LTMuMy0yIDAtLjEgMC02LjkgMC03IDAtMS4xIDEuNS0yIDMuMy0yIDEuNyAwIDMuMS44IDMuMiAxLjkiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzMuNCAzNS41Yy0xLjggMC0zLjMtMS0zLjMtMi4xIDAtLjEgMC0xLjggMC0zLjVzMC0zLjQgMC0zLjVjMC0xLjEgMS41LTIuMSAzLjMtMi4xIDEuNyAwIDMuMS44IDMuMyAxLjl2LjFoLS4xLS4xdi0uMWMtLjEtMS0xLjUtMS44LTMuMi0xLjgtMS43IDAtMy4yLjktMy4yIDJ2My41IDMuNWMwIDEuMSAxLjUgMS45IDMuMiAxLjl6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTczLjQgMjguNmMtMS43IDAtMy4yLS45LTMuMi0yLjFzMS40LTIuMSAzLjItMi4xYzEuNyAwIDMuMi45IDMuMiAyLjFzLTEuNSAyLjEtMy4yIDIuMXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNzMuNCAyOC43Yy0xLjggMC0zLjItMS0zLjItMi4yczEuNC0yLjIgMy4yLTIuMmMxLjEgMCAyLjEuNCAyLjcgMSAuNC40LjUuOC41IDEuMnMtLjIuOC0uNSAxLjJjLS42LjYtMS42IDEtMi43IDF6bTAtNC4yYy0xLjcgMC0zLjEuOS0zLjEgMnMxLjQgMiAzLjEgMmMxIDAgMi0uMyAyLjYtLjkuMy0uMy41LS43LjUtMS4xcy0uMi0uOC0uNS0xLjFjLS42LS41LTEuNS0uOS0yLjYtLjl6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTczLjQgMjcuOGMtMS42IDAtMi45LS44LTIuOS0xLjdzMS4zLTEuNyAyLjktMS43IDIuOS44IDIuOSAxLjctMS4zIDEuNy0yLjkgMS43eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im03My40IDI3LjljLS44IDAtMS41LS4yLTIuMS0uNXMtLjktLjgtLjktMS4yYzAtLjMuMS0uNi40LS45LjUtLjUgMS41LS45IDIuNS0uOSAxLjYgMCAyLjkuOCAyLjkgMS43IDAgLjMtLjEuNi0uNC45LS40LjUtMS40LjktMi40Ljl6bTAtMy40Yy0xIDAtMS45LjMtMi40LjgtLjIuMi0uNC41LS40LjggMCAuNC4zLjguOCAxLjFzMS4yLjUgMiAuNWMxIDAgMS45LS4zIDIuNC0uOC4yLS4yLjQtLjUuNC0uOCAwLS45LTEuMi0xLjYtMi44LTEuNnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNzEuMiAzOS45Yy0xLjggMC0zLjQtLjktMy40LTIuMSAwLS4xIDAtNy4xIDAtNy4yIDAtMS4yIDEuNi0yLjEgMy40LTIuMSAxLjcgMCAzLjIuOSAzLjMgMiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im03MS4yIDQwYy0xLjkgMC0zLjQtMS0zLjQtMi4xIDAtLjEgMC03LjEgMC03LjIgMC0xLjIgMS42LTIuMiAzLjQtMi4yIDEuNyAwIDMuMi45IDMuNCAxLjl2LjFoLS4xdi0uMWMtLjEtMS4xLTEuNi0xLjktMy4zLTEuOS0xLjggMC0zLjMuOS0zLjMgMnY3LjJjMCAxLjEgMS41IDIgMy4zIDJ6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTcxLjEgMzIuOGMtMS44IDAtMy4zLTEtMy4zLTIuMnMxLjUtMi4yIDMuMy0yLjIgMy4zIDEgMy4zIDIuMmMwIDEuMy0xLjQgMi4yLTMuMyAyLjJ6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTcxLjEgMzIuOWMtMS44IDAtMy4zLTEtMy4zLTIuMnMxLjUtMi4yIDMuMy0yLjJjMS44IDAgMy4zIDEgMy4zIDIuMi4xIDEuMi0xLjQgMi4yLTMuMyAyLjJ6bTAtNC4zYy0xLjggMC0zLjIuOS0zLjIgMi4xczEuNCAyLjEgMy4yIDIuMWMxLjggMCAzLjItLjkgMy4yLTIuMXMtMS40LTIuMS0zLjItMi4xeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im03MS4xIDMyYy0xLjYgMC0zLS44LTMtMS43IDAtMSAxLjMtMS43IDMtMS43IDEuNiAwIDMgLjggMyAxLjdzLTEuMyAxLjctMyAxLjd6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTcxLjEgMzJjLTEuNyAwLTMtLjgtMy0xLjhzMS40LTEuOCAzLTEuOGMxLjcgMCAzIC44IDMgMS44LjEgMS0xLjMgMS44LTMgMS44em0wLTMuNGMtMS42IDAtMi45LjgtMi45IDEuN3MxLjMgMS43IDIuOSAxLjdjMS42IDAgMi45LS44IDIuOS0xLjcuMS0xLTEuMi0xLjctMi45LTEuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjcuMyA0NS40Yy0yIDAtMy44LTEuMS0zLjgtMi40IDAtLjEgMC04LjEgMC04LjMgMC0xLjMgMS44LTIuNCAzLjgtMi40czMuNyAxIDMuOCAyLjJ2LjEiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjcuMyA0NS40Yy0xIDAtMi0uMy0yLjctLjctLjgtLjUtMS4yLTEuMS0xLjItMS43IDAtLjEgMC04LjEgMC04LjMgMC0uNy40LTEuMyAxLjItMS43LjctLjQgMS43LS43IDIuNy0uNyAyIDAgMy43IDEgMy45IDIuMnYuMWgtLjItLjF2LS4xYy0uMS0xLjItMS44LTIuMi0zLjctMi4yLTEgMC0xLjkuMy0yLjcuNy0uNy40LTEuMSAxLTEuMSAxLjZ2OC4zYzAgLjYuNCAxLjIgMS4xIDEuNnMxLjcuNyAyLjcuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjcuMiAzNy4zYy0yLjEgMC0zLjctMS4xLTMuNy0yLjVzMS43LTIuNSAzLjctMi41YzIuMSAwIDMuNyAxLjEgMy43IDIuNS4xIDEuNC0xLjYgMi41LTMuNyAyLjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTY3LjIgMzcuNGMtMi4xIDAtMy44LTEuMS0zLjgtMi41czEuNy0yLjUgMy44LTIuNWMyLjEgMCAzLjggMS4xIDMuOCAyLjUgMCAuNy0uNCAxLjMtMS4xIDEuOC0uNy40LTEuNi43LTIuNy43em0wLTVjLTIgMC0zLjcgMS4xLTMuNyAyLjRzMS42IDIuNCAzLjcgMi40YzEgMCAxLjktLjMgMi42LS43LjctLjUgMS4xLTEuMSAxLjEtMS43IDAtMS4zLTEuNi0yLjQtMy43LTIuNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjcuMiAzNi4zYy0xLjkgMC0zLjQtLjktMy40LTJzMS41LTIgMy40LTIgMy40LjkgMy40IDItMS41IDItMy40IDJ6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTY3LjIgMzYuNGMtMS4yIDAtMi40LS40LTMtMS0uMy0uMy0uNS0uNy0uNS0xIDAtLjQuMi0uNy41LTEgLjYtLjYgMS44LTEgMy0xIDEuOSAwIDMuNS45IDMuNSAyLjEgMCAuNi0uNCAxLjEtMSAxLjUtLjcuMi0xLjUuNC0yLjUuNHptMC00Yy0xLjIgMC0yLjMuNC0yLjkgMS0uMy4zLS40LjYtLjQgMSAwIC4zLjIuNy40IDEgLjYuNiAxLjcgMSAyLjkgMSAuOSAwIDEuNy0uMiAyLjQtLjYuNi0uNCAxLS44IDEtMS4zIDAtMS4yLTEuNS0yLjEtMy40LTIuMXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjUuNSAzOC42YzAtMS40LTEuOS0yLjQtNC0yLjQtMiAwLTMuOCAxLTMuOSAyLjN2LjEgOC42YzAgMS40IDEuOCAyLjQgMy45IDIuNHM0LTEuMSA0LTIuNWMwLS4xIDAtOC4zIDAtOC41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02MS41IDQ5LjdjLTIuMiAwLTQtMS4yLTQtMi41di04LjYtLjFjLjItMS4zIDEuOS0yLjMgNC0yLjMgMi4yIDAgNCAxLjEgNCAyLjV2OC41Yy4xIDEuMy0xLjggMi41LTQgMi41em0tMy44LTExLjF2OC42YzAgMS4zIDEuOCAyLjQgMy45IDIuNHMzLjktMS4xIDMuOS0yLjRjMC0uMSAwLTguMyAwLTguNSAwLTEuMy0xLjgtMi40LTMuOS0yLjQtMi4xLS4xLTMuOC45LTMuOSAyLjN6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTYxLjUgNDEuM2MyLjEgMCAzLjgtMS4xIDMuOC0yLjVzLTEuNy0yLjUtMy44LTIuNS0zLjggMS4xLTMuOCAyLjVjMCAxLjMgMS43IDIuNSAzLjggMi41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im02MS41IDQxLjNjLTIuMiAwLTMuOS0xLjItMy45LTIuNnMxLjgtMi42IDMuOS0yLjZjMS4zIDAgMi41LjQgMy4zIDEuMi40LjQuNy45LjcgMS40cy0uMiAxLS43IDEuNGMtLjcuOC0yIDEuMi0zLjMgMS4yem0wLTUuMWMtMi4xIDAtMy44IDEuMS0zLjggMi41czEuNyAyLjUgMy44IDIuNWMxLjMgMCAyLjUtLjQgMy4yLTEuMS40LS40LjYtLjkuNi0xLjRzLS4yLS45LS42LTEuM2MtLjctLjctMS45LTEuMi0zLjItMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im02MS41IDQwLjNjMS45IDAgMy41LS45IDMuNS0ycy0xLjYtMi0zLjUtMi0zLjUuOS0zLjUgMiAxLjYgMiAzLjUgMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjEuNSA0MC4zYy0xLjMgMC0yLjQtLjQtMy4xLTEtLjMtLjMtLjQtLjctLjQtMS4xIDAtLjYuNC0xLjEgMS4xLTEuNXMxLjYtLjYgMi41LS42YzEuMyAwIDIuNC40IDMuMSAxIC4zLjMuNS43LjUgMS4xcy0uMi44LS41IDEuMWMtLjcuNi0xLjkgMS0zLjIgMXptMC00LjFjLS45IDAtMS44LjItMi40LjZzLTEgLjktMSAxLjRjMCAuMy4yLjcuNSAxIC42LjYgMS44IDEgMyAxIDEuMiAwIDIuNC0uNCAzLTEgLjMtLjMuNS0uNi41LTEgMC0uMy0uMi0uNy0uNS0xLS43LS42LTEuOC0xLTMuMS0xeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0yMS4yIDEyLjVjMC0uNy0xLTEuMy0yLjEtMS4zcy0yIC41LTIuMSAxLjJ2NC42YzAgLjcgMSAxLjMgMi4xIDEuM3MyLjEtLjYgMi4xLTEuM2MwIDAgMC00LjQgMC00LjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTE5LjEgMTguNGMtMS4yIDAtMi4xLS42LTIuMi0xLjQgMCAwIDAtMS4yIDAtMi4zIDAtMi4yIDAtMi4zIDAtMi4zdi0uMWMuMS0uNyAxLTEuMiAyLjEtMS4yLjUgMCAxLjEuMSAxLjUuNHMuNy42LjcgMXYzLjkuNmMwIC40LS4yLjctLjcgMS0uMy4zLS44LjQtMS40LjR6bS0yLTUuOXYyLjMgMi4zYzAgLjcuOSAxLjIgMiAxLjIuNSAwIDEtLjEgMS40LS40LjQtLjIuNi0uNS42LS45di0uNmMwLTEuMyAwLTMuOSAwLTMuOSAwLS4zLS4yLS42LS42LS45LS40LS4yLS45LS40LTEuNC0uNC0xIC4xLTEuOS42LTIgMS4zeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xOS4xIDEzLjljMS4xIDAgMi0uNiAyLTEuNCAwLS43LS45LTEuMy0yLTEuM3MtMiAuNi0yIDEuM2MwIC44LjkgMS40IDIgMS40eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xOS4xIDE0Yy0xLjEgMC0yLjEtLjYtMi4xLTEuNHMuOS0xLjQgMi4xLTEuNGMxLjIgMCAyLjEuNiAyLjEgMS40cy0uOSAxLjQtMi4xIDEuNHptMC0yLjdjLTEuMSAwLTIgLjYtMiAxLjNzLjkgMS4zIDIgMS4zYzEuMSAwIDItLjYgMi0xLjNzLS45LTEuMy0yLTEuM3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTkuMSAxMy40YzEgMCAxLjktLjUgMS45LTEuMXMtLjgtMS4xLTEuOS0xLjFjLTEgMC0xLjkuNS0xLjkgMS4xLjEuNi45IDEuMSAxLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xOS4xIDEzLjVjLS41IDAtMS0uMS0xLjMtLjMtLjQtLjItLjYtLjUtLjYtLjggMC0uNi45LTEuMiAxLjktMS4yIDEuMSAwIDEuOS41IDEuOSAxLjIuMS42LS44IDEuMS0xLjkgMS4xem0wLTIuMmMtMSAwLTEuOC41LTEuOCAxIDAgLjMuMi41LjUuN3MuOC4zIDEuMy4zYzEgMCAxLjgtLjUgMS44LTFzLS44LTEtMS44LTF6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE3LjQgNDguMnYyLjVsMi45LTEuNS4xLS45eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xNy40IDUwLjh2LTIuNmwzIC4xdjF6bTAtMi41djIuNGwyLjktMS41di0uOXoiLz48cGF0aCBkPSJtMTggMTQuNGMwLS43LTEtMS4zLTIuMS0xLjNzLTIgLjUtMi4xIDEuMnY0LjZjMCAuNyAxIDEuMyAyLjEgMS4zczIuMS0uNiAyLjEtMS4zYzAtLjEgMC00LjQgMC00LjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTE1LjkgMjAuM2MtMS4yIDAtMi4xLS42LTIuMS0xLjQgMCAwIDAtMS40IDAtMi43IDAtMS43IDAtMS45IDAtMS45LjEtLjcgMS0xLjMgMi4xLTEuMy41IDAgMS4xLjEgMS41LjRzLjcuNi43IDF2NC41YzAgLjgtMSAxLjQtMi4yIDEuNHptLTItNnYxLjkgMi43YzAgLjcuOSAxLjIgMiAxLjJzMi0uNiAyLTEuMmMwLS4xIDAtNC41IDAtNC41IDAtLjMtLjItLjYtLjYtLjktLjQtLjItLjktLjQtMS40LS40LTEgLjEtMS45LjYtMiAxLjJ6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE1LjkgMTUuOGMxLjEgMCAyLS42IDItMS4zcy0uOS0xLjMtMi0xLjMtMiAuNi0yIDEuMy45IDEuMyAyIDEuM3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTUuOSAxNS45Yy0uNyAwLTEuNC0uMi0xLjctLjYtLjItLjItLjQtLjUtLjQtLjggMC0uOC45LTEuNCAyLjEtMS40LjYgMCAxLjEuMSAxLjUuNHMuNi42LjYgMWMwIC43LS45IDEuNC0yLjEgMS40em0wLTIuN2MtMS4xIDAtMiAuNi0yIDEuMyAwIC4yLjEuNS4zLjcuNC40IDEgLjYgMS43LjYgMS4xIDAgMi0uNiAyLTEuMyAwLS4zLS4yLS43LS42LS45LS40LS4zLS45LS40LTEuNC0uNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTUuOSAxNS4zYzEgMCAxLjktLjUgMS45LTEuMXMtLjgtMS4xLTEuOS0xLjFjLTEgMC0xLjkuNS0xLjkgMS4xLjEuNi45IDEuMSAxLjkgMS4xeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xNS45IDE1LjNjLS43IDAtMS4zLS4yLTEuNi0uNi0uMi0uMi0uMy0uNC0uMy0uNnMuMS0uNC4zLS42Yy4zLS4zIDEtLjYgMS42LS42IDEuMSAwIDEuOS41IDEuOSAxLjIgMCAuMy0uMi42LS42LjgtLjMuMy0uOC40LTEuMy40em0wLTIuMWMtLjYgMC0xLjIuMi0xLjYuNS0uMi4yLS4yLjMtLjIuNXMuMS4zLjIuNWMuMy4zLjkuNSAxLjYuNS41IDAgLjktLjEgMS4zLS4zLjMtLjIuNS0uNC41LS43IDAtLjYtLjgtMS0xLjgtMXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTEuNyAyMi41YzAtLjktMS4zLTEuNy0yLjctMS43cy0yLjYuNy0yLjcgMS42djUuOWMwIC45IDEuMyAxLjcgMi43IDEuNyAxLjUgMCAyLjctLjggMi43LTEuNyAwIDAgMC01LjcgMC01Ljh6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTguOSAzMC4xYy0uNyAwLTEuNC0uMi0xLjktLjVzLS44LS44LS44LTEuMmMwIDAgMC0xLjUgMC0zIDAtMS44IDAtMi45IDAtM3YtLjFjLjEtLjkgMS4zLTEuNiAyLjctMS42LjkgMCAxLjguMyAyLjMuOC4zLjMuNC42LjQuOXY1LjljMCAuMy0uMS42LS40LjktLjQuNi0xLjMuOS0yLjMuOXptLTIuNi03Ljd2MyAzYzAgLjQuMy45LjggMS4yczEuMi40IDEuOC40Yy45IDAgMS44LS4zIDIuMy0uOC4zLS4zLjQtLjYuNC0uOCAwLS4xIDAtNS44IDAtNS45IDAtLjMtLjEtLjYtLjQtLjgtLjUtLjUtMS40LS44LTIuMy0uOC0xLjQgMC0yLjUuNy0yLjYgMS41eiIvPjxwYXRoIGQ9Im04LjkgMjQuM2MxLjUgMCAyLjYtLjggMi42LTEuOHMtMS4yLTEuNy0yLjYtMS43Yy0xLjUgMC0yLjYuOC0yLjYgMS44IDAgLjkgMS4yIDEuNyAyLjYgMS43eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMjQuNGMtMS41IDAtMi43LS44LTIuNy0xLjggMC0uNS4zLS45LjgtMS4zLjUtLjMgMS4yLS41IDEuOS0uNSAxLjUgMCAyLjcuOCAyLjcgMS44cy0xLjIgMS44LTIuNyAxLjh6bTAtMy41Yy0uNyAwLTEuNC4yLTEuOS41cy0uOC44LS44IDEuMmMwIC45IDEuMiAxLjcgMi42IDEuN3MyLjYtLjggMi42LTEuN2MuMi0xLTEtMS43LTIuNS0xLjd6Ii8+PHBhdGggZD0ibTguOSAyMy42YzEuMyAwIDIuNC0uNiAyLjQtMS40cy0xLjEtMS40LTIuNC0xLjQtMi40LjYtMi40IDEuNCAxLjEgMS40IDIuNCAxLjR6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTguOSAyMy43Yy0uNiAwLTEuMy0uMS0xLjctLjQtLjUtLjMtLjctLjYtLjctMSAwLS4zLjEtLjUuMy0uNy40LS40IDEuMi0uNyAyLjEtLjcuNiAwIDEuMy4xIDEuNy40LjUuMy43LjYuNyAxIC4xLjctMSAxLjQtMi40IDEuNHptMC0uMWMxLjMgMCAyLjQtLjYgMi40LTEuNCAwLS40LS4yLS43LS43LTEtLjQtLjMtMS0uNC0xLjctLjQtLjggMC0xLjYuMy0yLjEuNy0uMi4yLS4zLjQtLjMuNyAwIC40LjIuNy43IDFzMS4xLjQgMS43LjR6Ii8+PHBhdGggZD0ibTE1LjMgMTYuNmMwLS44LTEuMS0xLjUtMi40LTEuNS0xLjIgMC0yLjMuNi0yLjQgMS40djUuMmMwIC44IDEuMSAxLjUgMi40IDEuNXMyLjQtLjcgMi40LTEuNWMwLS4xIDAtNSAwLTUuMXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTIuOSAyMy4yYy0xLjMgMC0yLjQtLjctMi40LTEuNXYtLjFjMC0xLjIgMC01IDAtNS4xdi0uMWMuMS0uOCAxLjItMS40IDIuNC0xLjQuNiAwIDEuMi4yIDEuNy40LjUuMy43LjcuNyAxLjF2Mi42IDIuNWMwIC4zLS4xLjYtLjQuOC0uMy42LTEuMS44LTIgLjh6bS0yLjMtNi43djUuMS4xYzAgLjggMS4xIDEuNCAyLjMgMS40LjggMCAxLjYtLjMgMi0uNy4yLS4yLjMtLjUuMy0uNyAwIDAgMC0xLjMgMC0yLjUgMC0xLjMgMC0yLjUgMC0yLjYgMC0uNC0uMi0uNy0uNy0xLS40LS4zLTEtLjQtMS42LS40LTEuMiAwLTIuMi42LTIuMyAxLjN6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTEyLjkgMTguMmMxLjMgMCAyLjMtLjcgMi4zLTEuNXMtMS0xLjUtMi4zLTEuNS0yLjMuNy0yLjMgMS41IDEuMSAxLjUgMi4zIDEuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTIuOSAxOC4yYy0xLjMgMC0yLjQtLjctMi40LTEuNnMxLjEtMS42IDIuNC0xLjZjMS4zIDAgMi40LjcgMi40IDEuNnMtMS4xIDEuNi0yLjQgMS42em0wLTNjLTEuMiAwLTIuMi43LTIuMiAxLjVzMSAxLjUgMi4yIDEuNWMxLjIgMCAyLjItLjcgMi4yLTEuNS4xLS45LS45LTEuNS0yLjItMS41eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMi45IDE3LjZjMS4yIDAgMi4xLS42IDIuMS0xLjIgMC0uNy0uOS0xLjItMi4xLTEuMnMtMi4xLjYtMi4xIDEuMiAxIDEuMiAyLjEgMS4yeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xMi45IDE3LjZjLS42IDAtMS4xLS4xLTEuNS0uNC0uNC0uMi0uNi0uNi0uNi0uOSAwLS43IDEtMS4zIDIuMi0xLjNzMi4yLjYgMi4yIDEuM2MtLjEuNy0xLjEgMS4zLTIuMyAxLjN6bTAtMi40Yy0xLjEgMC0yIC41LTIgMS4yIDAgLjMuMi42LjYuOHMuOS40IDEuNS40YzEuMSAwIDItLjUgMi0xLjJzLS45LTEuMi0yLjEtMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMyAxOS4zYzAtLjgtMS4xLTEuNS0yLjQtMS41LTEuMiAwLTIuMy42LTIuNCAxLjR2NS4yYzAgLjggMS4xIDEuNSAyLjQgMS41czIuNC0uNyAyLjQtMS41YzAgMCAwLTUgMC01LjF6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEwLjcgMjZjLTEuMyAwLTIuNC0uNy0yLjQtMS41IDAtLjEgMC01LjEgMC01LjJ2LS4xYy4xLS44IDEuMi0xLjQgMi40LTEuNCAxLjMgMCAyLjQuNyAyLjQgMS41djUuMWMwIC45LTEuMSAxLjYtMi40IDEuNnptLTIuMy02Ljd2NS4yYzAgLjggMS4xIDEuNCAyLjMgMS40IDEuMyAwIDIuMy0uNiAyLjMtMS40IDAtLjEgMC01LjEgMC01LjEgMC0uOC0xLjEtMS40LTIuMy0xLjQtMS4yLS4xLTIuMy41LTIuMyAxLjN6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTEwLjcgMjAuOWMxLjMgMCAyLjMtLjcgMi4zLTEuNXMtMS0xLjUtMi4zLTEuNS0yLjMuNy0yLjMgMS41IDEgMS41IDIuMyAxLjV6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEwLjcgMjFjLTEuMyAwLTIuNC0uNy0yLjQtMS42IDAtLjQuMy0uOC43LTEuMXMxLS41IDEuNy0uNWMuOCAwIDEuNS4zIDIgLjcuMy4zLjQuNi40LjlzLS4xLjYtLjQuOWMtLjUuNC0xLjIuNy0yIC43em0wLS4xYy44IDAgMS41LS4zIDEuOS0uNy4yLS4yLjQtLjUuNC0uOHMtLjEtLjYtLjQtLjhjLS40LS40LTEuMS0uNy0xLjktLjctLjYgMC0xLjIuMi0xLjYuNC0uNC4zLS42LjYtLjYgMS0uMS45LjkgMS42IDIuMiAxLjZ6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTEwLjcgMjAuM2MxLjIgMCAyLjEtLjYgMi4xLTEuMiAwLS43LS45LTEuMi0yLjEtMS4ycy0yLjEuNi0yLjEgMS4yYzAgLjcuOSAxLjIgMi4xIDEuMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTAuNyAyMC40Yy0xLjIgMC0yLjItLjYtMi4yLTEuM3MxLTEuMyAyLjItMS4zIDIuMi42IDIuMiAxLjNjLS4xLjctMSAxLjMtMi4yIDEuM3ptMC0yLjVjLTEuMSAwLTIgLjUtMiAxLjIgMCAuNi45IDEuMiAyIDEuMiAxLjEgMCAyLS41IDItMS4yIDAtLjYtLjktMS4yLTItMS4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMS44IDIyLjVjMC0xLTEuNC0xLjgtMi45LTEuOHMtMi44LjgtMi45IDEuN3Y2LjRjMCAxIDEuMyAxLjggMi45IDEuOHMyLjktLjggMi45LTEuOGMwLS4xIDAtNi4yIDAtNi4zeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMzAuN2MtMSAwLTItLjMtMi41LS45LS4zLS4zLS41LS42LS41LTEgMCAwIDAtNC44IDAtNi4zdi0uMmMuMS0xIDEuNC0xLjcgMy0xLjcuOCAwIDEuNS4yIDIuMS41LjYuNC45LjguOSAxLjN2Ni4zYzAgLjMtLjIuNy0uNSAxLS41LjctMS41IDEtMi41IDF6bS0yLjgtOC4ydjYuNGMwIC4zLjEuNi40LjkuNS41IDEuNC44IDIuNC44IDEgMCAxLjktLjMgMi40LS45LjMtLjMuNC0uNi40LS45IDAgMCAwLTYuMiAwLTYuMyAwLS41LS4zLS45LS44LTEuMnMtMS4zLS41LTItLjVjLTEuNSAwLTIuNy43LTIuOCAxLjd6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTguOSAyNC41YzEuNiAwIDIuOC0uOCAyLjgtMS45IDAtMS0xLjMtMS45LTIuOC0xLjktMS42IDAtMi44LjgtMi44IDEuOSAwIDEgMS4yIDEuOSAyLjggMS45eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMjQuNWMtLjggMC0xLjUtLjItMi0uNi0uNi0uMy0uOS0uOC0uOS0xLjMgMC0xLjEgMS4zLTEuOSAyLjktMS45IDEgMCAxLjkuMyAyLjQuOS4zLjMuNS43LjUgMS4xcy0uMi44LS41IDEuMWMtLjUuNC0xLjQuNy0yLjQuN3ptMC0zLjdjLTEuNSAwLTIuOC44LTIuOCAxLjggMCAuNS4zLjkuOCAxLjMuNS4zIDEuMi41IDIgLjUuOSAwIDEuOC0uMyAyLjMtLjguMy0uMy40LS42LjQtMXMtLjItLjctLjQtMWMtLjUtLjUtMS40LS44LTIuMy0uOHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtOC45IDIzLjdjMS40IDAgMi42LS43IDIuNi0xLjVzLTEuMi0xLjUtMi42LTEuNS0yLjYuNy0yLjYgMS41YzAgLjkgMS4yIDEuNSAyLjYgMS41eiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im04LjkgMjMuOGMtLjkgMC0xLjgtLjMtMi4zLS44LS4yLS4yLS40LS41LS40LS44cy4xLS42LjQtLjhjLjUtLjUgMS4zLS44IDIuMy0uOC43IDAgMS40LjIgMS45LjVzLjguNy44IDEuMS0uMy44LS44IDEuMS0xLjIuNS0xLjkuNXptMC0zYy0uOSAwLTEuNy4zLTIuMi43LS4yLjItLjMuNS0uMy43IDAgLjMuMS41LjMuNy41LjUgMS4zLjcgMi4yLjcuNyAwIDEuMy0uMiAxLjgtLjQuNS0uMy43LS42LjctMXMtLjMtLjctLjctMWMtLjUtLjMtMS4xLS40LTEuOC0uNHoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTEuOCAyNi41YzAtMS4xLTEuNS0yLTMuMy0yLTEuNyAwLTMuMS44LTMuMiAxLjl2Ny4xYzAgMS4xIDEuNSAyIDMuMiAyczMuMy0uOSAzLjMtMmMwLS4xIDAtNi45IDAtN3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtOC42IDM1LjZjLTEuMSAwLTIuMi0uNC0yLjgtMS0uMy0uMy0uNS0uNy0uNS0xLjEgMCAwIDAtMi41IDAtNi45di0uM2MuMS0xLjEgMS42LTEuOSAzLjMtMS45IDEuOCAwIDMuMyAxIDMuMyAyLjF2N2MwIC42LS40IDEuMS0xIDEuNXMtMS41LjYtMi4zLjZ6bS0zLjItOS4ydi4yIDYuOWMwIC40LjIuNy41IDEgLjYuNiAxLjYuOSAyLjcuOS44IDAgMS42LS4yIDIuMi0uNnMuOS0uOS45LTEuNGMwLS4xIDAtNyAwLTcgMC0xLjEtMS41LTEuOS0zLjItMS45LTEuNiAwLTMgLjktMy4xIDEuOXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtOC42IDI4LjdjMS43IDAgMy4yLS45IDMuMi0yLjFzLTEuNC0yLjEtMy4yLTIuMWMtMS43IDAtMy4yLjktMy4yIDIuMSAwIDEuMSAxLjQgMi4xIDMuMiAyLjF6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTguNiAyOC43Yy0uOSAwLTEuNy0uMi0yLjMtLjZzLTEtMS0xLTEuNWMwLS42LjMtMS4xIDEtMS41LjYtLjQgMS40LS42IDIuMy0uNiAxLjggMCAzLjIgMSAzLjIgMi4yIDAgLjQtLjIuOC0uNSAxLjItLjYuNS0xLjYuOC0yLjcuOHptMC00LjFjLS44IDAtMS42LjItMi4yLjZzLS45LjktLjkgMS40LjMgMSAuOSAxLjQgMS40LjYgMi4yLjZjMSAwIDItLjMgMi42LS45LjMtLjMuNS0uNy41LTEuMSAwLTEuMS0xLjQtMi0zLjEtMnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtOC42IDI3LjljMS42IDAgMi45LS44IDIuOS0xLjdzLTEuMy0xLjctMi45LTEuNy0yLjkuOC0yLjkgMS43IDEuMyAxLjcgMi45IDEuN3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtOC42IDI3LjljLTEuNiAwLTIuOS0uOC0yLjktMS43IDAtMSAxLjMtMS44IDIuOS0xLjggMSAwIDIgLjMgMi41LjkuMy4zLjQuNi40LjkgMCAuOS0xLjMgMS43LTIuOSAxLjd6bTAtMy40Yy0xLjYgMC0yLjguNy0yLjggMS42czEuMyAxLjYgMi44IDEuNmMxLjYgMCAyLjgtLjcgMi44LTEuNiAwLS4zLS4xLS42LS40LS44LS41LS40LTEuNC0uOC0yLjQtLjh6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE0LjIgMzAuNmMwLTEuMS0xLjYtMi4xLTMuNC0yLjEtMS43IDAtMy4yLjktMy4zIDJ2Ny4zYzAgMS4yIDEuNSAyLjEgMy4zIDIuMXMzLjQtLjkgMy40LTIuMWMwLS4xIDAtNy4xIDAtNy4yeiIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xMC44IDQwYy0xLjggMC0zLjQtMS0zLjQtMi4xIDAtLjEgMC02LjEgMC03LjN2LS4yYy4xLTEuMSAxLjYtMiAzLjQtMiAxLjIgMCAyLjMuNCAyLjkgMSAuMy4zLjUuNy41IDEuMXY3LjJjLjEgMS4zLTEuNSAyLjMtMy40IDIuM3ptLTMuMi05LjR2Ny4zYzAgMS4xIDEuNSAyIDMuMyAyIDEuOCAwIDMuMy0uOSAzLjMtMiAwLS4xIDAtNy4yIDAtNy4yIDAtLjQtLjItLjctLjUtMS0uNi0uNi0xLjctMS0yLjgtMS0xLjgtLjEtMy4yLjgtMy4zIDEuOXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTAuOCAzMi45YzEuOCAwIDMuMy0xIDMuMy0yLjJzLTEuNS0yLjItMy4zLTIuMi0zLjMgMS0zLjMgMi4yYy4xIDEuMiAxLjUgMi4yIDMuMyAyLjJ6IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEwLjggMzIuOWMtMS44IDAtMy4zLTEtMy4zLTIuMnMxLjUtMi4yIDMuMy0yLjJjMS44IDAgMy4zIDEgMy4zIDIuMi4xIDEuMi0xLjQgMi4yLTMuMyAyLjJ6bTAtNC4zYy0xLjggMC0zLjIuOS0zLjIgMi4xczEuNCAyLjEgMy4yIDIuMWMxLjggMCAzLjItLjkgMy4yLTIuMXMtMS40LTIuMS0zLjItMi4xeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xMC44IDMyYzEuNiAwIDMtLjggMy0xLjcgMC0xLTEuMy0xLjctMy0xLjctMS42IDAtMyAuOC0zIDEuNy4xLjkgMS40IDEuNyAzIDEuN3oiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTAuOCAzMi4xYy0uOCAwLTEuNi0uMi0yLjEtLjUtLjYtLjMtLjktLjgtLjktMS4zIDAtMSAxLjQtMS44IDMtMS44IDEuNyAwIDMgLjggMyAxLjguMSAxLTEuMyAxLjgtMyAxLjh6bTAtMy41Yy0xLjYgMC0yLjkuOC0yLjkgMS43IDAgLjQuMy45LjggMS4yLjYuMyAxLjMuNSAyLjEuNSAxLjYgMCAyLjktLjggMi45LTEuNy4xLS45LTEuMy0xLjctMi45LTEuN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTQuNiA0NS4zYzIgMCAzLjgtMS4xIDMuOC0yLjQgMC0uMSAwLTguMSAwLTguMyAwLTEuMy0xLjgtMi40LTMuOC0yLjRzLTMuNyAxLTMuOCAyLjJ2LjEiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTQuNiA0NS40di0uMWMxLjMgMCAyLjUtLjQgMy4yLTEuMS40LS40LjUtLjguNS0xLjIgMC0uMSAwLTEuNSAwLTMuMSAwLTIuMyAwLTUuMSAwLTUuMiAwLS40LS4yLS44LS41LTEuMi0uNy0uNy0xLjktMS4xLTMuMi0xLjEtMiAwLTMuNiAxLTMuNyAyLjJ2LjFoLS4xLS4xdi0uMWMuMi0xLjIgMS45LTIuMyAzLjktMi4zIDEuMyAwIDIuNi40IDMuMyAxLjIuNC40LjYuOC42IDEuM3Y1LjIgMy4xYzAgLjQtLjIuOS0uNiAxLjMtLjcuNi0yIDEtMy4zIDF6IiBmaWxsPSIjMDAzNDczIi8+PHBhdGggZD0ibTE0LjYgMzcuM2MyLjEgMCAzLjctMS4xIDMuNy0yLjVzLTEuNy0yLjUtMy43LTIuNWMtMi4xIDAtMy43IDEuMS0zLjcgMi41IDAgMS4zIDEuNiAyLjUgMy43IDIuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTQuNiAzNy4zYy0xIDAtMi0uMy0yLjctLjctLjctLjUtMS4xLTEuMS0xLjEtMS44IDAtLjUuMi0xIC42LTEuNC43LS43IDEuOS0xLjEgMy4yLTEuMSAxIDAgMiAuMyAyLjcuNy43LjUgMS4xIDEuMSAxLjEgMS44IDAgMS40LTEuNyAyLjUtMy44IDIuNXptMC00LjljLTEuMiAwLTIuNC40LTMuMSAxLjEtLjQuNC0uNi44LS42IDEuMyAwIC42LjQgMS4yIDEuMSAxLjdzMS42LjcgMi42LjdjMiAwIDMuNy0xLjEgMy43LTIuNCAwLS42LS40LTEuMi0xLjEtMS43cy0xLjYtLjctMi42LS43eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xNC42IDM2LjNjMS45IDAgMy40LS45IDMuNC0ycy0xLjUtMi0zLjQtMi0zLjQuOS0zLjQgMiAxLjUgMiAzLjQgMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTQuNiAzNi40Yy0xLjkgMC0zLjUtLjktMy41LTIuMSAwLS40LjItLjcuNS0xIC42LS42IDEuOC0xIDMtMSAuOSAwIDEuOC4yIDIuNC42LjcuNCAxIC45IDEgMS41cy0uNCAxLjEtMSAxLjVjLS42LjItMS41LjUtMi40LjV6bTAtNGMtMS4yIDAtMi4zLjQtMi45IDEtLjMuMy0uNC42LS40IDEgMCAxLjEgMS41IDEuOSAzLjMgMS45LjkgMCAxLjctLjIgMi40LS42LjYtLjQgMS0uOCAxLTEuM3MtLjMtMS0xLTEuM2MtLjctLjUtMS41LS43LTIuNC0uN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMjMuNiAzOC42YzAtMS40LTEuOS0yLjQtNC0yLjQtMiAwLTMuOCAxLTMuOSAyLjN2LjEgOC42YzAgMS40IDEuOCAyLjQgMy45IDIuNHM0LTEuMSA0LTIuNWMuMS0uMiAwLTguNCAwLTguNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTkuNyA0OS42Yy0yLjIgMC00LTEuMi00LTIuNSAwLS4xIDAtNS45IDAtOC41di0uM2MuMi0xLjMgMS45LTIuMyA0LTIuMyAyLjIgMCA0IDEuMiA0IDIuNXY4LjVjMCAxLjUtMS44IDIuNi00IDIuNnptLTMuOS0xMS4xdi4xIDguNWMwIDEuMyAxLjggMi40IDMuOSAyLjQgMi4xIDAgMy45LTEuMSAzLjktMi40IDAtLjIgMC04LjUgMC04LjUgMC0xLjMtMS44LTIuNC0zLjktMi40LTIgMC0zLjcgMS0zLjkgMi4zeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xOS43IDQxLjJjMi4xIDAgMy44LTEuMSAzLjgtMi41cy0xLjctMi41LTMuOC0yLjUtMy44IDEuMS0zLjggMi41IDEuNyAyLjUgMy44IDIuNXoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTkuNyA0MS4zYy0yLjIgMC0zLjktMS4yLTMuOS0yLjYgMC0uNy40LTEuNCAxLjItMS45LjctLjUgMS43LS44IDIuOC0uOCAxIDAgMiAuMyAyLjguOC43LjUgMS4yIDEuMSAxLjIgMS45IDAgLjctLjQgMS40LTEuMiAxLjktLjkuNC0xLjkuNy0yLjkuN3ptMC01LjFjLTEgMC0yIC4zLTIuNy43LS43LjUtMS4xIDEuMS0xLjEgMS43IDAgMS40IDEuNyAyLjUgMy44IDIuNSAxIDAgMi0uMyAyLjctLjcuNy0uNSAxLjEtMS4xIDEuMS0xLjcgMC0uNy0uNC0xLjMtMS4xLTEuNy0uNy0uNS0xLjctLjgtMi43LS44eiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im0xOS43IDQwLjJjMS45IDAgMy41LS45IDMuNS0ycy0xLjYtMi0zLjUtMi0zLjUuOS0zLjUgMiAxLjYgMiAzLjUgMnoiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTkuNyA0MC4zYy0yIDAtMy42LS45LTMuNi0yLjEgMC0uNi40LTEuMSAxLjEtMS41czEuNi0uNiAyLjUtLjZjLjkgMCAxLjguMiAyLjUuNnMxLjEuOSAxLjEgMS41YzAgMS4xLTEuNiAyLjEtMy42IDIuMXptMC00LjFjLS45IDAtMS44LjItMi40LjZzLTEgLjktMSAxLjRjMCAxLjEgMS41IDIgMy40IDJzMy40LS45IDMuNC0yYzAtLjUtLjQtMS0xLTEuNHMtMS41LS42LTIuNC0uNnoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTkuNiAzOCAuNC40djEuNmwtMi4yIDEuM3Y4LjlsMS4zLS43cy41LjEgMS4zLS4xdi42bC0uMi43LTcuNiAzLjktMS0uNnYtMTAuNS4xYy02LjItMy42LTEwLjQtMTAtMTAuNi0xNS4yIDAgMCAuMS0xLjIuMS0yIC4xLTExLjQgMTcuOS0yMC42IDM5LjktMjAuNnMzOS41IDguOSAzOS44IDIwLjVjMCAwIC4yIDEuMS4yIDIuNS0uMSA1LjEtNC4zIDExLjEtMTAuNSAxNC43bC0uOC0xLjUuOCAxLjV2MTAuNWwtLjkuNi03LjYtNC0uMy0uNnYtLjRjLjggMCAxLjUtLjIgMS41LS4ybDEuMi42di04LjlsLTIuMi0xLjN2LTEuNWwuNC0uNHMxMS00LjIgMTEuMS0xMy4yYzAtMTMuNi0yNy43LTE3LjctMzIuNS0xNy4xLTQuOS43LTMxLjUgMi4yLTMyLjMgMTcuMi0uMyA1LjIgNCAxMCAxMC43IDEzLjIiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtMTIuNiA1NC44LTEuMS0uN3YtMTAuNWMtNS45LTMuNC0xMC40LTkuOC0xMC41LTE1LjIgMCAwIC4xLTEuMi4xLTIgMC01LjUgNC4yLTEwLjcgMTEuNy0xNC42czE3LjUtNiAyOC4yLTZoLjFjMTAuNiAwIDIwLjYgMi4xIDI4IDUuOSA3LjUgMy44IDExLjcgOSAxMS44IDE0LjYgMCAwIC4yIDEuMS4yIDIuNS0uMSA1LjItNC4zIDExLjItMTAuNSAxNC43djEwLjVsLTEgLjctNy42LTQuMS0uMy0uNnYtLjRoLjFjLjcgMCAxLjUtLjIgMS41LS4ybDEuMS42di04LjdsLTIuNC0xLjV2LTEuNWwuNC0uNGMuMSAwIDExLTQuMyAxMS4xLTEzLjEgMC0zLjEtMS40LTUuOS00LjItOC4zLTcuNy03LTI0LjMtOS4zLTI4LjEtOC44LS40LjEtLjkuMS0xLjYuMi03LjQuOC0yOS45IDMuMi0zMC42IDE2LjktLjMgNSAzLjcgOS45IDEwLjcgMTMuMWwuNC41djEuNmwtMi4yIDEuM3Y4LjdsMS4zLS42cy41LjEgMS4zIDBoLjF2LjdsLS4zLjd6bS0uOS0uOC45LjYgNy41LTMuOS4yLS43di0uNWMtLjYuMS0xLjEuMS0xLjIgMGwtMS40Ljd2LTlsMi4zLTEuMnYtMS41bC0uNC0uNWMtNy0zLjMtMTEtOC4yLTEwLjgtMTMuMi44LTEzLjggMjMuMy0xNi4zIDMwLjctMTcuMS43LS4xIDEuMi0uMSAxLjYtLjIgMy45LS41IDIwLjUgMS45IDI4LjMgOC44IDIuOCAyLjUgNC4yIDUuMyA0LjIgOC40IDAgMi42LTEgNi40LTUuNiAxMC0yLjYgMi4xLTUuMyAzLjEtNS41IDMuMmwtLjMuNHYxLjRsMi4yIDEuM3Y5bC0xLjItLjZjLS4xIDAtLjcuMi0xLjQuMnYuM2wuMy42IDcuNSA0IC44LS42di0xMC41bC0uNy0xLjQuMS0uMS43IDEuNGM2LjEtMy41IDEwLjItOS40IDEwLjQtMTQuNiAwLTEuMy0uMi0yLjQtLjItMi41LS4zLTExLjQtMTcuOC0yMC4zLTM5LjctMjAuMyAwIDAgMCAwLS4xIDAtMjEuOSAwLTM5LjcgOS4yLTM5LjcgMjAuNSAwIC44LS4xIDItLjEgMiAuMiA1LjQgNC42IDExLjggMTAuNiAxNS4ydi4yeiIgZmlsbD0iIzAwMzQ3MyIvPjxwYXRoIGQ9Im04MC44IDI2LjZjLS4xIDUuMS00LjUgMTEuNy0xMSAxNS4xIiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTY5LjggNDEuOC0uMS0uMWMzLjEtMS42IDUuOS00LjEgNy45LTYuOSAxLjktMi43IDMtNS42IDMuMS04LjJoLjFjLS4xIDIuNi0xLjIgNS41LTMuMSA4LjItMiAyLjktNC44IDUuNC03LjkgN3oiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTIuNCA0MS45Yy02LjktMy41LTExLTEwLjQtMTEuMi0xNS41IiBmaWxsPSIjYzJjNGM2Ii8+PHBhdGggZD0ibTEyLjMgNDJjLTMuMi0xLjYtNi4xLTQuMS04LjEtNy4xLTEuOS0yLjgtMy01LjgtMy4xLTguNWguMWMuMSAyLjYgMS4yIDUuNiAzLjEgOC40IDIuMSAzIDQuOSA1LjUgOC4xIDcuMXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtNjIuNSAzNy45IDcuMiAzLjkiIGZpbGw9IiNjMmM0YzYiLz48cGF0aCBkPSJtNjYgMzUuN2guMXY4LjNoLS4xeiIgZmlsbD0iIzAwMzQ3MyIgdHJhbnNmb3JtPSJtYXRyaXgoLjQ4MDkgLS44NzY4IC44NzY4IC40ODA5IC0uNjQwNiA3OC42MjQ5KSIvPjxwYXRoIGQ9Im0xMS43IDQzLjUuOC0xLjUgNy4xLTQgLjQuNCIgZmlsbD0iI2MyYzRjNiIvPjxwYXRoIGQ9Im0xMS43IDQzLjVoLS4xbC44LTEuNiA3LjMtNCAuNC41LS4xLjEtLjQtLjQtNy4xIDMuOXoiIGZpbGw9IiMwMDM0NzMiLz48cGF0aCBkPSJtMTIuMiAyMy44YzMuNC0xMi42IDEzLjYtMjMuMyAyOC40LTIzLjIgMTUuMS4xIDI2LjYgMTAuOSAyOS41IDI1LjEgMCAwIC4xIDIuNy0uMiAyLjgtLjIgMC0uOC0xLjktMS4yLTItLjIgMC0uNSAwLS44LS4xLS43LS4xLTEuNS0uMy0yLjEtLjZsLTEuNy4yLTMuOC0xLTIuMyAzLjYtNC43IDEtMTMuMi02LjEtMjEuNi41LTUuMS42LTEuMyAxLjgtLjItLjd6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTI4IDdzLS42LS4yLS44LS4yLS4yLjMtLjMuNS0uNC42LS42LjYtLjIgMC0uNS4yYy0uMy4xLS40LjQtLjQuNnMtLjIuMy0uNC40IDEuMS4zIDEuNC4xYy4yLS4yLjEtLjIuMi0uNHMuMi0uMi4zLS40LS4xLS40LjItLjdjLjMtLjIuNC0uMy41LS41LjItLjIuNC0uMi40LS4yeiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Im00NC4zIDIzLjdzLS4zLjcgMCAuOS43LS4xLjUtLjVjLS4zLS40LS41LS40LS41LS40eiIgZmlsbD0iI2ZmZiIvPjxwYXRoIGQ9Im01NyAxOS41Yy0uNS4xLS42LjMtLjEgMSAuNC43LjQgMS4xLjQgMS4xcy4xLjQuNS43LjIuNi4yLjdjMCAuMi44LjggMSAuNHMwLTEuMS0uMi0xLjEtLjYuMS0uNi0uMS42LS4zLjYtLjYgMC0uOC0uMi0uNS0uNi44LS42LjhsLS4yLS40LjEtLjctLjQuMnMtLjQgMC0uMi0uM2MuMS0uMy40LTEuNC0uMy0xLjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTM0LjIgMjkuOHMuMS41LS41LjgtMS4xLjMtMS4xLjUuMS45LjIgMS43YzAgLjggMS4xIDEuNiAxLjQuNC40LTEuMi4yLTIuMi4yLTIuMnMuOS0uMy0uMi0xLjJ6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTU2LjUgMjMuMXMtLjUuMi0uOS41Yy0uNC40LS42LjYtMSAuOHMtLjkgMS4yIDAgMS42YzEgLjQgMS44IDEuMiAxLjkuNCAwLS44LjgtMS4yLjQtMS45LS40LS42LS4xLS42IDAtLjguMi0uMi0uMy0uOC0uNC0uNnoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJtNDkuNSAyMy42cy45LjkgMS42IDEuNmMuNi43LjkuOSAxLjMgMS41cy42LjUgMS4xLjZjLjUuMi44LjEgMS44LjQgMS4xLjMgMS42LjQgMiAuMnMtLjgtLjQtMS42LS41LTEuNC0uNC0xLjgtLjYtMS4xLjItLjktLjRjLjItLjctLjQtMS43LS45LTEuOC0uNS0uMi0xLjctLjktMi0xLS4xLS4yLS41LS4zLS42IDB6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTU0LjkgNy42czEuMS45IDEuNCAxLjJjLjMuNC42LjguNyAxLjMuMi40LjcuNi44LjlzLjEuNC40LjhjLjMuMy42IDAgLjMuN3MtLjYgMS4xLS43IDEuMy4xLjYuMS44LjQgMCAuNS0uNC4zLS4zLjctLjUuNi0uNS4yLTEuMS0uNi0xLS44LTEuMS0uNS0uMi0uMy0uMy4zLS44LjEtLjktLjIuNC0uOS0uNGMtLjctLjctLjgtLjYtLjctLjkuMS0uMi0xLjEtMS41LTEuOC0xLjR6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTUzLjYgNC44cy45LjYgMS4zIDEtLjUuMi0uNy4yYy0uMi4xLS4yLjMtLjYuMy0uMyAwIDAgLjMuMS45LjEuNy4xLjcuNCAxcy45LS4yIDEuNS4yYy43LjUgMS4yIDIuNSAxLjIgMi45LjEuNC0uMy40LS43LjctLjMuMyAwIC43LjMgMS4xLjQuNC43IDEuNC41IDEuNi0uMi4xLS40LS4zLS42LS43LS4xLS40LS43LS45LTEuMS0uNy0uMy4xLS42LS4xLS43LS41LS4xLS4zLS40IDAtLjQuNCAwIC41LS42LjQtLjUuNiAwIC4yLjIuMi44LjFzLjcgMCAuNyAwLS4zLjEtLjQuN2MtLjEuNSAxLjEgMS4xIDEuNiAxLjdzLS4zIDEuNi0uNiAxLjljLS4zLjQtMSAuNy0xLjQgMS0uNS40LTEuMS0uMi0xLjEtLjJzLS43IDEuMS0uNyAxLjMuOC4yLjkuNWMuMS4yLjUuOC42IDEuNCAwIC41LTEuMyAxLjItMS4zIDEuMnMtLjUtLjktLjgtMS4yYy0uMy0uNC0uOC0uNC0uOC0uNHMtLjEuNi0uMyAxLjJjLS4xLjYuMy42LjYuOXMuOC41IDEuMS44Yy4zLjIuNC45LjQuOXMtLjMgMC0uNy0uMWMtLjMtLjEtLjMtLjYtLjctMS0uMy0uNS0uOS0uNy0uOS0xLjFzLS4yLTEuMS0uNS0xLjVjLS4zLS41LS4xLS40LS4yLS44cy0uMy4xLS42LjMtLjQgMC0uNC0uNmMtLjEtLjYtLjctLjctLjgtMXMtLjEtLjQtLjQtLjItLjUtLjItLjcuMi0yIDEuNi0yLjIgMS43LS4xLjItLjEuNi0uMy4zLS40LjZjMCAuMyAwIC44LS4yIDEuMS0uMS4yLS4zLjUtLjUuNHMtLjQtLjUtLjQtLjZjLS4xLS4yLS41LTEuNy0uOS0yLjItLjMtLjUtLjMtMS42LS42LTEuNC0uMi4yLS44LjEtLjktLjVzLjYgMCAuNiAwIDAtLjItLjEtLjRjLS4yLS4yLS41LjItLjkgMHMtMS4yLS4zLTIuMi0uMi0xLjEtLjItMS4zLS41LTEgMC0xLjUtLjNjLS42LS4zLS45LS44LTEtLjUgMCAuMy4zIDEuMS4zIDEuMXMuMS0uMS40IDAtLjIuOS4zLjYgMS4xLS41IDEuMS0uNS4yLjUuNS43Yy4yLjIgMSAuNi4zIDEuMi0uNi42LTMuOSAxLjktNC4xIDEuOXMtLjkgMC0uOSAwIC4yLS42LS4zLTEuMmMtLjUtLjctLjctMS42LS45LTIuMS0uMi0uNi0uNi0yLS42LTJsLS4zLjVzLS40LTEuMi0uNC0uNWMwIC40LjkgMy41IDEgNC4xcy45IDEuMSAxLjMgMS44Yy41LjcgMi4yIDAgMi43IDAgLjUuMS0xIDIuMS0xLjUgMi42LS42LjYtMiAxLjUtMi4zIDEuOS0uMi40LS4yIDEuMS4zIDIuMi42IDEuMS0uNiAxLjktMSAyLjMtLjQuNS4xLjUuNCAxLjEuMi42LS45LjQtLjkgMS4yIDAgLjctLjggMi42LTEuNyAyLjhzLTEuNi4yLTIuNC0uOC0uNy0uMi0uOS0uNWMtLjEtLjMtLjItMS42LTEuMy0yLjQtMS4xLS43LS43LTIuMS0uOC0zLjdzLTEuNy0yLjItMS43LTIuNi4zLTEuMi0uMi0xLjktMS4yLTEuNC0xLjktLjktMy4yLjItMy42LS4yYy0uNC0uNSAwLS45LS41LTEuOC0uNi0uOS0uMy0xLjkuMi0yLjRzLjktMiAxLjUtMy4yYy43LTEuMiAyLjUtMiAzLjMtMi40cy42LS41LjktLjUuMi40LjguMmMuNS0uMiAyLjMgMCAzLjEuMnMtLjUgMS4xLS4yIDEuMiAxLjIuOSAxLjYgMS4xLjQtLjMuOS0uMy45LjMgMS42LjUgMS42LjIgMS45IDAgLjktMS4yLjktMS40LTEuMi4xLTEuNy4yLS44LS4zLS44LS43LS41LS40LS42LS4xYzAgLjMtLjUuNi0uNi4zLS4xLS4yLjEtLjUgMC0xIDAtLjUtLjctMi0uNy0ycy0uMS45IDAgMS4xLjQuOS40LjktLjItLjItLjQuMS0xLjEuMi0uOC4yYy4zLS4xLjQtLjYuMy0uOHMtLjUtLjktLjUtMS4zYzAtLjMtLjIgMC0xLS4xLS44IDAtLjUuNS0xLjEuNXMtLjYuMy0xLjEuN2MtLjQuMy0xLjYuMy0xLjguMnMwLS45LjMtMS40IDEuMS0xLjIgMS4xLTEgLjcuNSAxLjUuMmMuOS0uMy42LTEgMS4xLTEuMnMuMyAwIC41LjIuMi0uMi42LS40LjUtLjMgMS4xLS41LjcgMCAxLjEgMCAuMy0uNS43LS44LjIuMi0uMS42Yy0uNC40LjEuNC40LjVzMS4yLjEgMS40LS4xIDEuMS0uNSAyLjEtLjhjMS4xLS4zLS41LS40LS41LS42czEuMi0uNy0uMi0uNWMtMS41LjItLjcuOC0xLjIgMS4zcy0uNi4yLS44LjEtLjEtLjUgMC0uOWMwLS45LS43LS4zLTEtLjVzMC0uNS4zLS42LjQtLjQuNi0uNi41IDAgMS4yLS4yYy43LS4xIDItLjcgMi45LS45LjktLjMgMS4xLjUgMS41LjguNS40LjMuNi0uNS42cy4zLjMgMSAuNGMuNi4xIDEuMS0uMiAyLS41LjktLjIgMS4xLS40IDEuOC0uMS42LjIuMyAwIC45IDBzLjguMS45LS4zLjMtLjQuNS0uOSAxLS41IDEuNy0uOWMuOC0uNCAxLjEuNCAxLjYuM3MxLjMtLjMgMi4zLS40LjItLjQuMi0uNWMwLS4yLjItLjEuNi0uMi40IDAgLjggMCAxLS4yLjEtLjIuNS0uMy41LS4zczEuOS41IDMuNiAxLjR6IiBmaWxsPSIjZmZmIi8+PHBhdGggZD0ibTMyLjIgMTEuOXMtLjMuNC4yLjQuOC0uNCAxLS40LS40LjEgMCAuNiAxLjEuNy42LjljLS40LjItLjkuNC0xLjQgMC0uNi0uNC0uOS0uNS0xLjUtLjRzLS45IDAtLjYtLjIgMS41LTEuMyAxLjctLjl6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTM3LjMgMTIuMWMtLjQtLjQtLjgtLjItMS4xIDBzLS44LjEtLjYuNmMuMS41LjYgMSAuNCAxLjNzLS43LjItLjIuNiAxLjMgMSAxLjMuNGMwLS43LS40LS44LS4xLTFzLS4zLS42LS41LS44Yy0uMS0uMiAwLS4zLjUtLjQuMy0uMS43LS4zLjMtLjd6IiBmaWxsPSIjM2FiNWU4Ii8+PHBhdGggZD0ibTYzLjEgMjIuOXMtMS40LS43LS44IDAgLjUgMSAxLjIgMS4yLjkuMy45LjguMy40LjcuNi41LS4zLjktLjJjLjQgMCAuMS41LjguN3MuNCAwIC4zLS41LS4xLS44LS40LTEuMWMtLjMtLjItMi4yLTEuOS0yLjYtMS40LS41LjQtLjkuNi0uOS40LS4xLS4yLjEgMC0uMS0uNXoiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJtMzYuMiA0Mi4xIDQuMi0zLjguOC0uN2gtMS01LjMtLjJsLS4xLjEtMy4xIDMuMnYtMi44LS40aC0uNC00LS4zdi40bC4xIDEwLjR2LjRoLjMgNGwuNC0uMXYtLjQtMi42bC45LS44IDIuNSAzLjcuMi4xaC4xIDUuNC43bC0uNS0uN3oiIGZpbGw9IiNmZmYiLz48cGF0aCBkPSJtNDcuNSA0MmgtLjR2LjQgMi40LjRoLjQgMmMtLjMuMy0uNy41LTEuNi41cy0xLjYtLjItMi4xLS43Yy0uNC0uNC0uNi0xLS42LTEuOCAwLTEuNy43LTIuNSAyLjMtMi42LjUgMCAuOS4xIDEuMi4yLjIuMS40LjQuNC41bDUuMy0uMWMtLjMtMi44LTIuNi00LjEtNy4zLTQtMS44IDAtNC4yLjQtNS42IDIuMS0uOSAxLTEuMyAyLjMtMS4zIDRzLjUgMyAxLjQgNGMxLjIgMS4zIDMgMS45IDUuNyAxLjkgMi4yIDAgMy41LS40IDQuNS0xLjJsLjMuNS4xLjJoLjIgMS43LjR2LS40bC0uMS01Ljl2LS40aC0uNHoiIGZpbGw9IiNmZmYiLz48ZyBmaWxsPSIjMDAzNDczIj48cGF0aCBkPSJtMzIuNSA0NC41LTEuMyAxLjJ2Mi44aC00bC0uMS0xMC40aDR2My43bDMuNy0zLjdoNS4zbC00LjUgNCA1IDYuM2gtNS4zeiIvPjxwYXRoIGQ9Im00OS41IDQwLjljLS4xLS4yLS4zLS40LS41LS41LS40LS4yLS44LS4yLTEuNC0uMi0xLjYgMC0yLjcuOS0yLjYgMyAwIDEuOSAxIDIuOSAzIDIuOSAxLjMgMCAyLS41IDIuMi0xLjNoLTIuN3YtMi40bDYuOC0uMS4xIDUuOWgtMS43bC0uNS0uOWMtMSAxLTIuMyAxLjMtNC42IDEuNC0yLjggMC02LjYtLjctNi43LTUuNCAwLTQuNSAzLjUtNS42IDYuNi01LjcgNCAwIDYuNCAxLjEgNi44IDMuM3oiLz48cGF0aCBkPSJtMTUgNTcuNCAyLjYtMi44LjguNy0yLjYgMi44eiIvPjxwYXRoIGQ9Im0xNi44IDU5LjEgMi4yLTMuMSAxLjEuOC0uMiAzLjIgMS42LTIuMi44LjYtMi4yIDMuMS0xLjEtLjguMi0zLjItMS42IDIuMnoiLz48cGF0aCBkPSJtMjIuMiA2Mi42IDEuNC0yLjYtMS4zLS43LjQtLjcgMy41IDEuOC0uNC43LTEuMy0uNy0xLjQgMi42eiIvPjxwYXRoIGQ9Im0yNS4zIDY0LjIgMS4zLTMuNSAzIDEuMS0uMy44LTItLjgtLjIuNiAxLjkuNy0uMy43LTEuOS0uNy0uMy43IDIuMS44LS4zLjh6Ii8+PHBhdGggZD0ibTI5LjMgNjUuNiAxLTMuNiAyIC41Yy4zLjEuNS4xLjcuMi4xLjEuMy4xLjQuMnMuMi4yLjMuNHYuNWMtLjEuMy0uMi40LS40LjVzLS41LjEtLjguMWMuMi4xLjQuMi41LjN2LjQuNi45bC0xLjEtLjNjMC0uMSAwLS4yIDAtLjQgMCAwIDAgMCAwLS4xbC4xLS41YzAtLjIgMC0uMy0uMS0uNHMtLjMtLjItLjYtLjJsLS42LS4yLS40IDEuNHptMS44LTIuNy0uMi45LjYuMmMuMy4xLjUuMS43LjEuMSAwIC4yLS4xLjMtLjMgMC0uMiAwLS4zLS4xLS40cy0uMy0uMi0uNi0uM3oiLz48cGF0aCBkPSJtMzMuOSA2Ni44LjUtMy43IDEuNC4yIDEuMyAyLjkuNC0yLjcuOS4xLS41IDMuNy0xLjQtLjItMS4zLTIuOS0uNCAyLjd6Ii8+PHBhdGggZD0ibTM4LjggNjcuNiAxLjktMy44aDEuM2wyIDMuN2gtMS4ybC0uNC0uOC0yIC4xLS4zLjh6bTEuOC0xLjZoMS40bC0uNy0xLjR6Ii8+PHBhdGggZD0ibTQ1LjQgNjcuMS0uNC0yLjktMS40LjItLjEtLjggMy45LS42LjEuOC0xLjUuMi41IDIuOXoiLz48cGF0aCBkPSJtNDguOCA2Ni41LS45LTMuNyAxLS4zLjkgMy43eiIvPjxwYXRoIGQ9Im01MyA2NS40Yy0uNy4yLTEuMi4yLTEuNyAwcy0uOC0uNi0xLTEuMi0uMi0xLjEuMS0xLjVjLjMtLjUuOC0uOCAxLjQtMSAuNy0uMiAxLjMtLjIgMS43IDAgLjUuMi44LjYgMSAxLjJzLjIgMS4xLS4xIDEuNWMtLjIuNC0uNy44LTEuNCAxem0tMS43LTEuNGMuMS40LjMuNi42LjcuMi4xLjYuMS45IDAgLjQtLjEuNi0uMy43LS42LjEtLjIuMS0uNiAwLS45LS4xLS40LS4zLS43LS42LS44cy0uNi0uMi0uOSAwYy0uMy4xLS42LjMtLjcuNnMtLjEuNiAwIDF6Ii8+PHBhdGggZD0ibTU2LjIgNjQuMi0xLjctMy40IDEuMy0uNiAyLjcgMS43LTEuMi0yLjQuOS0uNCAxLjcgMy40LTEuMy41LTIuNy0xLjcgMS4yIDIuNHoiLz48cGF0aCBkPSJtNjAuNSA2Mi0uNS00LjIgMS4xLS43IDMuNiAyLjEtMSAuNy0uNy0uNS0xLjcgMS4xLjEuOHptLjctMi4zIDEuMS0uOC0xLjMtLjh6Ii8+PHBhdGggZD0ibTY1LjIgNTguNy0yLjUtMi45LjgtLjcgMS45IDIuMiAxLjUtMS4zLjUuNnoiLz48L2c+PC9zdmc+" alt="">KG International</div>
+      <p>Prototype calculator built for KG International's lubrication engineering tools. Formulas and bearing data per the KG workbook. Not a substitute for current SKF product data or application engineering review.</p>
+      <div class="sitefoot-links"><a href="#guest">Guest preview</a><a href="#admin">Admin</a></div>
+    </div>
+  </footer>
+</div>
+
+<!-- ============ Presenter / demo-walkthrough controls ============ -->
+<div class="presenter" id="presenter">
+  <button type="button" class="presenter-toggle" id="presenterToggle">⚙ Presenter controls</button>
+  <div class="presenter-panel" id="presenterPanel" hidden>
+    <div class="ptitle">Walkthrough switcher</div>
+    <div class="pnote">For demoing both modes to the client. Not part of the production UI.</div>
+    <div class="pmode">Current mode: <b id="presenterMode">guest</b></div>
+    <button type="button" id="presGuest">Guest view</button>
+    <button type="button" id="presApp">Logged-in demo (skip signup)</button>
+    <button type="button" id="presAdmin">Admin panel</button>
+    <button type="button" id="presReset">Reset demo session</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var BEARINGS = [["6000","D",10,26,8,0.019],["6200","D",10,30,9,0.031],["6300","D",10,35,11,0.053],["6001","D",12,28,8,0.021],["6201","D",12,32,10,0.037],["6301","D",12,37,12,0.06],["16002","D",15,32,8,0.027],["6002","D",15,32,9,0.03],["6202","D",15,35,11,0.045],["6302","D",15,42,13,0.082],["16003","D",17,35,8,0.031],["6003","D",17,35,10,0.038],["6203","D",17,40,12,0.065],["6303","D",17,47,14,0.11],["16004","D",20,42,8,0.051],["6004","D",20,42,12,0.067],["6204","D",20,47,14,0.11],["6304","D",20,52,15,0.14],["16005","D",25,47,8,0.055],["6005","D",25,47,12,0.078],["6205","D",25,52,15,0.13],["6305","D",25,62,17,0.23],["16006","D",30,55,9,0.089],["6006","D",30,55,13,0.12],["6206","D",30,62,16,0.2],["6306","D",30,72,19,0.35],["16007","D",35,62,9,0.11],["6007","D",35,62,14,0.15],["6207","D",35,72,17,0.29],["6307","D",35,80,21,0.46],["16008","D",40,68,9,0.13],["6008","D",40,68,15,0.19],["6208","D",40,80,18,0.37],["6308","D",40,90,23,0.63],["16009","D",45,75,10,0.17],["6009","D",45,75,16,0.24],["6209","D",45,85,19,0.42],["6309","D",45,100,25,0.84],["16010","D",50,80,10,0.18],["6010","D",50,80,16,0.26],["6210","D",50,90,20,0.46],["6310","D",50,110,27,1.1],["16011","D",55,90,11,0.26],["6011","D",55,90,18,0.38],["6211","D",55,100,21,0.61],["6311","D",55,120,29,1.35],["16012","D",60,95,11,0.29],["6012","D",60,95,18,0.41],["6212","D",60,110,22,0.78],["6312","D",60,130,31,1.7],["16013","D",65,100,11,0.3],["6013","D",65,100,18,0.44],["6213","D",65,120,23,1],["6313","D",65,140,33,2.1],["16014","D",70,110,13,0.44],["6014","D",70,110,20,0.61],["6214","D",70,125,24,1.1],["6314","D",70,150,35,2.55],["16015","D",75,115,13,0.46],["6015","D",75,115,20,0.65],["6215","D",75,130,25,1.2],["6315","D",75,160,37,3.05],["16016","D",80,125,14,0.61],["6016","D",80,125,22,0.86],["6216","D",80,140,26,1.45],["6316","D",80,170,39,3.65],["16017","D",85,130,14,0.64],["6017","D",85,130,22,0.9],["6217","D",85,150,28,1.8],["6317","D",85,180,41,4.25],["16018","D",90,140,16,0.85],["6018","D",90,140,24,1.15],["6218","D",90,160,30,2.2],["6318","D",90,190,43,4.95],["16019","D",95,145,16,0.89],["6019","D",95,145,24,1.2],["6219","D",95,170,32,2.65],["6319","D",95,200,45,5.75],["16020","D",100,150,16,0.94],["6020","D",100,150,24,1.25],["6220","D",100,180,34,3.2],["6320","D",100,215,47,7.1],["16021","D",105,160,18,1.2],["6021","D",105,160,26,1.6],["6221","D",105,190,36,3.8],["6321","D",105,225,49,8.2],["16022","D",110,170,19,1.45],["6022","D",110,170,28,1.95],["6222","D",110,200,38,4.45],["6322","D",110,240,50,9.65],["6322 M","D",110,240,50,11.5],["16024","D",120,180,19,1.55],["6024","D",120,180,28,2.1],["6224","D",120,215,40,5.25],["6224 M","D",120,215,40,6.1],["6324","D",120,260,55,12.5],["6324 M","D",120,260,55,14],["16026","D",130,200,22,2.35],["6026","D",130,200,33,3.3],["6226","D",130,230,40,5.85],["6326","D",130,280,58,15],["6326 M","D",130,280,58,17.5],["16028","D",140,210,22,2.55],["6028","D",140,210,33,3.45],["6028 M","D",140,210,33,4],["6228","D",140,250,42,7.75],["6328","D",140,300,62,18.5],["6328 M","D",140,300,62,21],["16030","D",150,225,24,3.15],["6030","D",150,225,35,4.3],["6030 M","D",150,225,35,4.9],["6230","D",150,270,45,10],["6230 M","D",150,270,45,11.5],["6330","D",150,320,65,23],["6330 M","D",150,320,65,25.5],["16032","D",160,240,25,3.65],["6032","D",160,240,38,5.2],["6032 M","D",160,240,38,6],["6232","D",160,290,48,13],["6232 M","D",160,290,48,14],["6332","D",160,340,68,26],["6332 M","D",160,340,68,30],["16034","D",170,260,28,5],["6034 M","D",170,260,42,8.15],["6234","D",170,310,52,16],["6234 M","D",170,310,52,17.5],["6334","D",170,360,72,31],["6334 M","D",170,360,72,35],["16036","D",180,280,31,6.5],["6036 M","D",180,280,46,10.5],["6236 M","D",180,320,52,18],["6336","D",180,380,75,36.5],["6336 M","D",180,380,75,41],["16038","D",190,290,31,6.9],["6038 M","D",190,290,46,11],["6238","D",190,340,55,19.5],["6238 M","D",190,340,55,21.5],["6338 M","D",190,400,78,47.5],["16040","D",200,310,34,8.8],["6040 M","D",200,310,51,14],["6240 M","D",200,360,58,26],["16044","D",220,340,37,11.5],["6044 M","D",220,340,56,18.5],["6244 M","D",220,400,65,36.5],["6344 M","D",220,460,88,73],["16048","D",240,360,37,12.5],["6048 M","D",240,360,56,19.5],["6248 M","D",240,440,72,51],["6052 M","D",260,400,65,29],["6252 M","D",260,480,80,65.5],["6056 M","D",280,420,65,31],["6060 M","D",300,460,74,44],["6064 M","D",320,480,74,46],["6068 M","D",340,520,82,62],["6072 M","D",360,540,82,64.5],["6076 M","D",380,560,82,70.5],["6080 M","D",400,600,90,87.5],["22205 E","S",25,52,18,0.26],["22205 EK","S",25,52,18,0.26],["22206 E","S",30,62,20,0.29],["22206 EK","S",30,62,20,0.29],["22207 E","S",35,72,23,0.45],["22207 EK","S",35,72,23,0.45],["22208 E","S",40,80,23,0.53],["22208 EK","S",40,80,23,0.53],["22308 E","S",40,90,33,1.05],["22308 E/VA405","S",40,90,33,1.05],["22308 EK","S",40,90,33,1.05],["22209 E","S",45,85,23,0.58],["22209 EK","S",45,85,23,0.58],["22309 E","S",45,100,36,1.4],["22309 E/VA405","S",45,100,36,1.4],["22309 EK","S",45,100,36,1.4],["22210 E","S",50,90,23,0.63],["22210 EK","S",50,90,23,0.63],["22310 E","S",50,110,40,1.9],["22310 E/VA405","S",50,110,40,1.9],["22310 EK","S",50,110,40,1.9],["22211 E","S",55,100,25,0.84],["22211 EK","S",55,100,25,0.84],["22311 E","S",55,120,43,2.45],["22311 E/VA405           22311 EK/VA405","S",55,120,43,2.45],["22311 EK","S",55,120,43,2.45],["22212 E","S",60,110,28,1.15],["22212 EK","S",60,110,28,1.15],["22312 E","S",60,130,46,3.1],["22312 E/VA405          22312 EK/VA405","S",60,130,46,3.1],["22312 EK","S",60,130,46,3.1],["22213 E","S",65,120,31,1.55],["22213 EK","S",65,120,31,1.55],["22313 E","S",65,140,48,3.75],["22313 E/VA405          22313 EK/VA405","S",65,140,48,3.75],["22313 EK","S",65,140,48,3.75],["22214 E","S",70,125,31,1.55],["22214 EK","S",70,125,31,1.55],["22314 E","S",70,150,51,4.55],["22314 E/VA405","S",70,150,51,4.55],["22314 EK","S",70,150,51,4.55],["22314 EK/VA405","S",70,150,51,4.55],["24015 CC/W33           24015 CCK30/W33","S",75,115,40,1.55],["22215 E","S",75,130,31,1.7],["22215 EK","S",75,130,31,1.7],["22315 E","S",75,160,55,5.55],["22315 EJA/VA405        22315 EKJA/VA405","S",75,160,55,5.55],["22315 EK","S",75,160,55,5.55],["22216 E","S",80,140,33,2.1],["22216 EK","S",80,140,33,2.1],["22316 E","S",80,170,58,6.6],["22316 EJA/VA405        22316 EKJA/VA405","S",80,170,58,6.6],["22316 EK","S",80,170,58,6.6],["22217 E","S",85,150,36,2.7],["22217 EK","S",85,150,36,2.7],["22317 E","S",85,180,60,7.65],["22317 EJA/VA405         22317 EKJA/VA405","S",85,180,60,7.65],["22317 EK","S",85,180,60,7.65],["22218 E","S",90,160,40,3.4],["22218 EK","S",90,160,40,3.4],["23218 CC/W33","S",90,160,52.4,4.65],["23218 CCK/W33","S",90,160,52.4,4.65],["22318 E","S",90,190,64,9.05],["22318 EJA/VA405         22318 EKJA/VA405","S",90,190,64,9.05],["22318 EK","S",90,190,64,9.05],["22219 E","S",95,170,43,4.15],["22219 EK","S",95,170,43,4.15],["22319 E","S",95,200,67,10.5],["22319 EJA/VA405         22319 EKJA/VA405","S",95,200,67,10.5],["22319 EK","S",95,200,67,10.5],["24020 CC/W33            24020 CCK30/W33","S",100,150,50,3.15],["23120 CC/W33","S",100,165,52,4.55],["23120 CCK/W33","S",100,165,52,4.55],["23120-2RS5/VT143","S",100,165,52,4.55],["24120 CC/W33            24120 CCK30/W33","S",100,165,65,5.65],["22220 E","S",100,180,46,4.9],["22220 EK","S",100,180,46,4.9],["23220 CC/W33","S",100,180,60.3,6.85],["23220 CCK/W33","S",100,180,60.3,6.85],["23220-2RS/VT143","S",100,180,60.3,6.85],["22320 E","S",100,215,73,13.5],["22320 EJA/VA405","S",100,215,73,13.5],["22320 EK","S",100,215,73,13.5],["22320 EKJA/VA405","S",100,215,73,13.5],["23022 CC/W33","S",110,170,45,3.8],["23022 CCK/W33","S",110,170,45,3.8],["23022-2RS/VT143","S",110,170,45,3.8],["24022 CC/W33            24022 CCK30/W33","S",110,170,60,5],["23122 CC/W33","S",110,180,56,5.75],["23122 CCK/W33","S",110,180,56,5.75],["23122-2CS5/VT143","S",110,180,56,5.75],["23122-2CS5K/VT143","S",110,180,56,5.75],["24122 CC/W33","S",110,180,69,7.1],["24122 CCK30/W33","S",110,180,69,7.1],["24122-2CS5/VT143","S",110,180,69,7.1],["22222 E","S",110,200,53,7],["22222 EK","S",110,200,53,7],["23222 CC/W33","S",110,200,69.8,9.85],["23222 CCK/W33","S",110,200,69.8,9.85],["23222-2CS5/VT143","S",110,200,69.8,9.85],["23222-2CS5K/VT143","S",110,200,69.8,9.85],["22322 E","S",110,240,80,18.5],["22322 EJA/VA405","S",110,240,80,18.5],["22322 EK","S",110,240,80,18.5],["22322 EKJA/VA405","S",110,240,80,18.5],["23024 CC/W33","S",120,180,46,4.2],["23024 CCK/W33","S",120,180,46,4.2],["24024 CC/W33","S",120,180,60,5.45],["24024 CCK30/W33","S",120,180,60,5.45],["24024-2CS5/VT143","S",120,180,60,5.45],["23124 CC/W33","S",120,200,62,8],["23124 CCK/W33","S",120,200,62,8],["24124 CC/W33            24124 CCK30/W33","S",120,200,80,10.5],["24124-2CS5/VT143","S",120,200,80,10.5],["22224 E","S",120,215,58,8.7],["22224 EK","S",120,215,58,8.7],["23224 CC/W33","S",120,215,76,12],["23224 CCK/W33","S",120,215,76,12],["23224-2CS5/VT143","S",120,215,76,12],["23224-2CS5K/VT143","S",120,215,76,12],["22324 CC/W33","S",120,260,86,23],["22324 CCJA/W33VA405","S",120,260,86,23],["22324 CCJA/W33VA406","S",120,260,86,23],["22324 CCK/W33","S",120,260,86,23],["22324 CCKJA/W33VA405","S",120,260,86,23],["22324-2CS5/VT143","S",120,260,86,23],["22324-2CS5K/VT143","S",120,260,86,23],["23026 CC/W33","S",130,200,52,6],["23026 CCK/W33","S",130,200,52,6],["23026-2CS5/VT143","S",130,200,52,6],["23026-2CS5K/VT143","S",130,200,52,6],["24026 CC/W33","S",130,200,69,8.05],["24026 CCK30/W33","S",130,200,69,8.05],["24026-2CS5/VT143","S",130,200,69,8.05],["23126 CC/W33","S",130,210,64,8.8],["23126 CCK/W33","S",130,210,64,8.8],["24126 CC/W33            24126 CCK30/W33","S",130,210,80,11],["24126-2CS5/VT143","S",130,210,80,11],["22226 E","S",130,230,64,11],["22226 EK","S",130,230,64,11],["23226 CC/W33","S",130,230,80,14.5],["23226 CCK/W33","S",130,230,80,14.5],["23226-2CS5/VT143","S",130,230,80,14.5],["23226-2CS5K/VT143","S",130,230,80,14.5],["22326 CC/W33","S",130,280,93,29],["22326 CCJA/W33VA405","S",130,280,93,29],["22326 CCK/W33","S",130,280,93,29],["22326 CCKJA/W33VA405","S",130,280,93,29],["22326-2CS5/VT143","S",130,280,93,29],["22326-2CS5K/VT143","S",130,280,93,29],["23028 CC/W33","S",140,210,53,6.55],["23028 CCK/W33","S",140,210,53,6.55],["23028-2CS5/VT143","S",140,210,53,6.55],["23028-2CS5K/VT143","S",140,210,53,6.55],["24028 CC/W33","S",140,210,69,8.55],["24028 CCK30/W33","S",140,210,69,8.55],["24028-2CS5/VT143","S",140,210,69,8.55],["23128 CC/W33","S",140,225,68,10.5],["23128 CCK/W33","S",140,225,68,10.5],["24128 CC/W33","S",140,225,85,13.5],["24128 CCK30/W33","S",140,225,85,13.5],["24128-2CS5/VT143        24128-2CS5K30/VT143","S",140,225,85,13.5],["22228 CC/W33","S",140,250,68,14],["22228 CCK/W33","S",140,250,68,14],["22228-2CS5/VT143","S",140,250,68,14],["22228-2CS5K/VT143","S",140,250,68,14],["23228 CC/W33","S",140,250,88,19],["23228 CCK/W33","S",140,250,88,19],["23228-2CS5/VT143","S",140,250,88,19],["23228-2CS5K/VT143","S",140,250,88,19],["22328 CC/W33","S",140,300,102,36.5],["22328 CCJA/W33VA405","S",140,300,102,36.5],["22328 CCK/W33","S",140,300,102,36.5],["22328 CCKJA/W33VA405","S",140,300,102,36.5],["22328-2CS5/VT143","S",140,300,102,36.5],["22328-2CS5K/VT143","S",140,300,102,36.5],["23030 CC/W33","S",150,225,56,7.95],["23030 CCK/W33","S",150,225,56,7.95],["23030-2CS5/VT143","S",150,225,56,7.95],["23030-2CS5K/VT143","S",150,225,56,7.95],["24030 CC/W33            24030 CCK30/W33","S",150,225,75,10.5],["24030-2CS5/VT143","S",150,225,75,10.5],["23130 CC/W33","S",150,250,80,16],["23130 CCK/W33","S",150,250,80,16],["23130-2CS5/VT143","S",150,250,80,16],["23130-2CS5K/VT143","S",150,250,80,16],["24130 CC/W33","S",150,250,100,20],["24130 CCK30/W33","S",150,250,100,20],["24130-2CS5/VT143","S",150,250,100,20],["24130-2CS5K30/VT143","S",150,250,100,20],["22230 CC/W33","S",150,270,73,18],["22230 CCK/W33","S",150,270,73,18],["22230-2CS5/VT143","S",150,270,73,18],["22230-2CS5K/VT143","S",150,270,73,18],["23230 CC/W33","S",150,270,96,24.5],["23230 CCK/W33","S",150,270,96,24.5],["23230-2CS5/VT143","S",150,270,96,24.5],["23230-2CS5K/VT143","S",150,270,96,24.5],["22330 CC/W33","S",150,320,108,43.5],["22330 CCJA/W33VA405","S",150,320,108,43.5],["22330 CCK/W33","S",150,320,108,43.5],["22330 CCKJA/W33VA405","S",150,320,108,43.5],["22330-2CS5/VT143","S",150,320,108,43.5],["22330-2CS5K/VT143","S",150,320,108,43.5],["23032 CC/W33","S",160,240,60,9.7],["23032 CCK/W33","S",160,240,60,9.7],["23032-2CS5/VT143","S",160,240,60,9.7],["23032-2CS5K/VT143","S",160,240,60,9.7],["24032 CC/W33","S",160,240,80,13],["24032 CCK30/W33","S",160,240,80,13],["24032-2CS5/VT143","S",160,240,80,13],["23132 CC/W33","S",160,270,86,20.5],["23132 CCK/W33","S",160,270,86,20.5],["23132-2CS5/VT143        23132-2CS5K/VT143","S",160,270,86,20.5],["24132 CC/W33","S",160,270,109,25],["24132 CCK30/W33","S",160,270,109,25],["24132-2CS5/VT143","S",160,270,109,25],["22232 CC/W33","S",160,290,80,22.5],["22232 CCK/W33","S",160,290,80,22.5],["22232-2CS5/VT143","S",160,290,80,22.5],["22232-2CS5K/VT143","S",160,290,80,22.5],["23232 CC/W33","S",160,290,104,31],["23232 CCK/W33","S",160,290,104,31],["22332 CC/W33","S",160,340,114,52],["22332 CCJA/W33VA405     22332 CCKJA/W33VA405","S",160,340,114,52],["22332 CCK/W33","S",160,340,114,52],["22332-2CS5/VT143","S",160,340,114,52],["22332-2CS5K/VT143","S",160,340,114,52],["23034 CC/W33","S",170,260,67,13],["23034 CCK/W33","S",170,260,67,13],["23034-2CS5/VT143","S",170,260,67,13],["23034-2CS5K/VT143","S",170,260,67,13],["24034 CC/W33","S",170,260,90,17.5],["24034 CCK30/W33","S",170,260,90,17.5],["24034-2CS5/VT143","S",170,260,90,17.5],["23134 CC/W33","S",170,280,88,22],["23134 CCK/W33","S",170,280,88,22],["23134-2CS5/VT143","S",170,280,88,22],["23134-2CS5K/VT143","S",170,280,88,22],["24134 CC/W33","S",170,280,109,27.5],["24134 CCK30/W33","S",170,280,109,27.5],["24134-2CS5/VT143","S",170,280,109,27.5],["22234 CC/W33","S",170,310,86,28.5],["22234 CCK/W33","S",170,310,86,28.5],["22234-2CS5/VT143","S",170,310,86,28.5],["22234-2CS5K/VT143","S",170,310,86,28.5],["23234 CC/W33","S",170,310,110,37.5],["23234 CCK/W33","S",170,310,110,37.5],["22334 CC/W33","S",170,360,120,61],["22334 CCJA/W33VA405     22334 CCKJA/W33VA405","S",170,360,120,61],["22334 CCK/W33","S",170,360,120,61],["23936 CC/W33            23936 CCK/W33","S",180,250,52,7.9],["23036 CC/W33","S",180,280,74,17],["23036 CCK/W33","S",180,280,74,17],["24036 CC/W33            24036 CCK30/W33","S",180,280,100,23],["24036-2CS5/VT143","S",180,280,100,23],["23136 CC/W33","S",180,300,96,28],["23136 CCK/W33","S",180,300,96,28],["23136-2CS5/VT143","S",180,300,96,28],["23136-2CS5K/VT143","S",180,300,96,28],["24136 CC/W33","S",180,300,118,34.5],["24136 CCK30/W33","S",180,300,118,34.5],["24136-2CS5/VT143","S",180,300,118,34.5],["22236 CC/W33","S",180,320,86,29.5],["22236 CCK/W33","S",180,320,86,29.5],["22236-2CS5/VT143","S",180,320,86,29],["22236-2CS5K/VT143","S",180,320,86,29],["23236 CC/W33","S",180,320,112,39.5],["23236 CCK/W33","S",180,320,112,39.5],["22336 CC/W33","S",180,380,126,71.5],["22336 CCJA/W33VA405     22336 CCKJA/W33VA405","S",180,380,126,71.5],["22336 CCK/W33","S",180,380,126,71.5],["23938 CC/W33            23938 CCK/W33","S",190,260,52,8.3],["23038 CC/W33","S",190,290,75,18],["23038 CCK/W33","S",190,290,75,18],["24038 CC/W33            24038 CCK30/W33","S",190,290,100,24.5],["23138 CC/W33","S",190,320,104,35],["23138 CCK/W33","S",190,320,104,35],["23138-2CS5/VT143","S",190,320,104,35],["23138-2CS5K/VT143","S",190,320,104,35],["24138 CC/W33","S",190,320,128,43],["24138 CCK30/W33","S",190,320,128,43],["24138-2CS5/VT143","S",190,320,128,43],["22238 CC/W33","S",190,340,92,36.5],["22238 CCK/W33","S",190,340,92,36.5],["22238-2CS5/VT143","S",190,340,92,35],["22238-2CS5K/VT143","S",190,340,92,35],["23238 CC/W33","S",190,340,120,48],["23238 CCK/W33","S",190,340,120,48],["22338 CC/W33","S",190,400,132,82.5],["22338 CCJA/W33VA405     22338 CCKJA/W33VA405","S",190,400,132,82.5],["22338 CCK/W33","S",190,400,132,82.5],["23940 CC/W33            23940 CCK/W33","S",200,280,60,11.5],["23040 CC/W33","S",200,310,82,23.5],["23040 CCK/W33","S",200,310,82,23.5],["24040 CC/W33","S",200,310,109,31],["24040 CCK30/W33","S",200,310,109,31],["23140 CC/W33","S",200,340,112,43],["23140 CCK/W33","S",200,340,112,43],["23140-2CS5/VT143","S",200,340,112,43],["23140-2CS5K/VT143","S",200,340,112,43],["24140 CC/W33","S",200,340,140,53.5],["24140 CCK30/W33","S",200,340,140,53.5],["24140-2CS5/VT143","S",200,340,140,53.5],["22240 CC/W33","S",200,360,98,43.5],["22240 CCK/W33","S",200,360,98,43.5],["22240-2CS5/VT143","S",200,360,98,42],["22240-2CS5K/VT143","S",200,360,98,42],["23240 CC/W33","S",200,360,128,58],["23240 CCK/W33","S",200,360,128,58],["23240-2CS5/VT143","S",200,360,128,58],["23240-2CS5K/VT143","S",200,360,128,58],["22340 CC/W33","S",200,420,138,95],["22340 CCJA/W33VA405     22340 CCKJA/W33VA405","S",200,420,138,95],["22340 CCK/W33","S",200,420,138,95],["23944 CC/W33            23944 CCK/W33","S",220,300,60,12.5],["23044 CC/W33","S",220,340,90,30.5],["23044 CCK/W33","S",220,340,90,30.5],["23044-2CS5/VT143","S",220,340,90,29],["23044-2CS5K/VT143","S",220,340,90,29],["24044 CC/W33","S",220,340,118,40],["24044 CCK30/W33","S",220,340,118,40],["23144 CC/W33","S",220,370,120,53.5],["23144 CCK/W33","S",220,370,120,53.5],["23144-2CS5/VT143","S",220,370,120,53.5],["23144-2CS5K/VT143","S",220,370,120,53.5],["24144 CC/W33","S",220,370,150,67],["24144 CCK30/W33","S",220,370,150,67],["22244 CC/W33","S",220,400,108,60.5],["22244 CCK/W33","S",220,400,108,60.5],["22244-2CS5/VT143","S",220,400,108,58],["22244-2CS5K/VT143","S",220,400,108,58],["23244 CC/W33","S",220,400,144,81.5],["23244 CCK/W33","S",220,400,144,81.5],["22344 CC/W33","S",220,460,145,120],["22344 CCJA/W33VA405     22344 CCKJA/W33VA405","S",220,460,145,120],["22344 CCK/W33","S",220,460,145,120],["22344-2CS5/VT143","S",220,460,145,115],["22344-2CS5K/VT143","S",220,460,145,115],["23948 CC/W33            23948 CCK/W33","S",240,320,60,13.5],["23048 CC/W33","S",240,360,92,33.5],["23048 CCK/W33","S",240,360,92,33.5],["24048 CC/W33            24048 CCK30/W33","S",240,360,118,43],["23148 CC/W33","S",240,400,128,66.5],["23148 CCK/W33","S",240,400,128,66.5],["23148-2CS5/VT143","S",240,400,128,66.5],["23148-2CS5K/VT143","S",240,400,128,66.5],["24148 CC/W33","S",240,400,160,83],["24148 CCK30/W33","S",240,400,160,83],["22248 CC/W33","S",240,440,120,83],["22248 CCK/W33","S",240,440,120,83],["23248 CC/W33","S",240,440,160,110],["23248 CCK/W33","S",240,440,160,110],["22348 CC/W33","S",240,500,155,155],["22348 CCK/W33","S",240,500,155,155],["23952 CC/W33            23952 CCK/W33","S",260,360,75,23.5],["23052 CC/W33","S",260,400,104,48.5],["23052 CCK/W33","S",260,400,104,48.5],["23052-2CS5/VT143","S",260,400,104,46],["23052-2CS5K/VT143","S",260,400,104,46],["24052 CC/W33","S",260,400,140,65.5],["24052 CCK30/W33","S",260,400,140,65.5],["23152 CC/W33","S",260,440,144,90.5],["23152 CCK/W33","S",260,440,144,90.5],["23152-2CS5/VT143","S",260,440,144,90.5],["23152-2CS5K/VT143","S",260,440,144,90.5],["24152 CC/W33","S",260,440,180,110],["24152 CCK30/W33","S",260,440,180,110],["22252 CC/W33            22252 CCK/W33","S",260,480,130,110],["23252 CC/W33","S",260,480,174,140],["23252 CCK/W33","S",260,480,174,140],["22352 CC/W33","S",260,540,165,190],["22352 CCK/W33","S",260,540,165,190],["23956 CC/W33         23956 CCK/W33","S",280,380,75,25],["23056 CC/W33","S",280,420,106,52.5],["23056 CCK/W33","S",280,420,106,52.5],["24056 CC/W33","S",280,420,140,69.5],["24056 CCK30/W33","S",280,420,140,69.5],["23156 CC/W33","S",280,460,146,97],["23156 CCK/W33","S",280,460,146,97],["23156-2CS5/VT143","S",280,460,146,97],["23156-2CS5K/VT143","S",280,460,146,97],["24156 CC/W33","S",280,460,180,120],["24156 CCK30/W33","S",280,460,180,120],["22256 CC/W33         22256 CCK/W33","S",280,500,130,115],["23256 CC/W33","S",280,500,176,150],["23256 CCK/W33","S",280,500,176,150],["22356 CC/W33","S",280,580,175,235],["22356 CCK/W33","S",280,580,175,235],["23960 CC/W33         23960 CCK/W33","S",300,420,90,39.5],["23060 CC/W33","S",300,460,118,71.5],["23060 CCK/W33","S",300,460,118,71.5],["24060 CC/W33","S",300,460,160,97],["24060 CCK30/W33","S",300,460,160,97],["23160 CC/W33","S",300,500,160,125],["23160 CCK/W33","S",300,500,160,125],["23160-2CS5/VT143","S",300,500,160,125],["23160-2CS5K/VT143","S",300,500,160,125],["24160 CC/W33","S",300,500,200,160],["24160 CCK30/W33","S",300,500,200,160],["22260 CC/W33         22260 CCK/W33","S",300,540,140,135],["23260 CC/W33","S",300,540,192,190],["23260 CCK/W33","S",300,540,192,190],["23964 CC/W33         23964 CCK/W33","S",320,440,90,42],["23064 CC/W33","S",320,480,121,78],["23064 CCK/W33","S",320,480,121,78],["24064 CC/W33         24064 CCK30/W33","S",320,480,160,100],["23164 CC/W33","S",320,540,176,165],["23164 CCK/W33","S",320,540,176,165],["23164-2CS5/VT143","S",320,540,176,165],["23164-2CS5K/VT143","S",320,540,176,165],["24164 CC/W33         24164 CCK30/W33","S",320,540,218,210],["22264 CC/W33         22264 CCK/W33","S",320,580,150,175],["23264 CC/W33","S",320,580,208,240],["23264 CCK/W33","S",320,580,208,240],["23968 CC/W33         23968 CCK/W33","S",340,460,90,45.5],["23068 CC/W33","S",340,520,133,105],["23068 CCK/W33","S",340,520,133,105],["24068 CC/W33","S",340,520,180,140],["24068 CCK30/W33","S",340,520,180,140],["23168 CC/W33","S",340,580,190,210],["23168 CCK/W33","S",340,580,190,210],["23168-2CS5/VT143","S",340,580,190,210],["23168-2CS5K/VT143","S",340,580,190,210],["24168 ECCJ/W33       24168 ECCK30J/W33","S",340,580,243,280],["23268 CA/W33","S",340,620,224,295],["23268 CAK/W33","S",340,620,224,295],["23972 CC/W33         23972 CCK/W33","S",360,480,90,46],["23072 CC/W33","S",360,540,134,110],["23072 CCK/W33","S",360,540,134,110],["24072 CC/W33         24072 CCK30/W33","S",360,540,180,145],["23172 CC/W33","S",360,600,192,220],["23172 CCK/W33","S",360,600,192,220],["23172-2CS5/VT143","S",360,600,192,214],["23172-2CS5K/VT143","S",360,600,192,214],["23272 CA/W33","S",360,650,232,335],["23272 CAK/W33","S",360,650,232,335],["23272-2CS5K/VT143","S",360,650,232,332],["23976 CC/W33         23976 CCK/W33","S",380,520,106,69],["23076 CC/W33","S",380,560,135,115],["23076 CCK/W33","S",380,560,135,115],["24076 CC/W33         24076 CCK30/W33","S",380,560,180,150],["23176 CA/W33","S",380,620,194,230],["23176 CAK/W33","S",380,620,194,230],["23176-2CS5K/VT143","S",380,620,194,232],["24176 ECA/W33        24176 ECAK30/W33","S",380,620,243,300],["23276 CA/W33","S",380,680,240,375],["23276 CAK/W33","S",380,680,240,375],["23980 CC/W33         23980 CCK/W33","S",400,540,106,71],["23080 CC/W33","S",400,600,148,150],["23080 CCK/W33","S",400,600,148,150],["24080 ECCJ/W33       24080 ECCK30J/W33","S",400,600,200,205],["23180 CA/W33","S",400,650,200,265],["23180 CAK/W33","S",400,650,200,265],["23180-2CS5K/VT143","S",400,650,200,255],["24180 ECA/W33        24180 ECAK30/W33","S",400,650,250,340],["22380 CA/W33         22380 CAK/W33","S",400,820,243,650],["23984 CC/W33         23984 CCK/W33","S",420,560,106,74.5],["23084 CA/W33         23084 CAK/W33","S",420,620,150,155],["24084 ECA/W33        24084 ECAK30/W33","S",420,620,200,210],["23184 CKJ/W33","S",420,700,224,350],["24184 ECA/W33        24184 ECAK30/W33","S",420,700,280,445],["23988 CC/W33         23988 CCK/W33","S",440,600,118,99.5],["23088 CA/W33","S",440,650,157,180],["23088 CAK/W33","S",440,650,157,180],["24088 ECA/W33        24088 ECAK30/W33","S",440,650,212,245],["23188 CA/W33","S",440,720,226,360],["23188 CAK/W33","S",440,720,226,360],["23992 CA/W33         23992 CAK/W33","S",460,620,118,105],["23092 CA/W33         23092 CAK/W33","S",460,680,163,205],["24092 ECA/W33        24092 ECAK30/W33","S",460,680,218,275],["23192 CA/W33         23192 CAK/W33","S",460,760,240,440],["23192-2CS5/VT143     23192-2CS5K/VT143","S",460,760,240,427],["23996 CA/W33         23996 CAK/W33","S",480,650,128,125],["23096 CA/W33         23096 CAK/W33","S",480,700,165,215],["24096 ECA/W33        24096 ECAK30/W33","S",480,700,218,285]];
+  var TYPE_NAMES = { D: "Deep groove ball bearing", S: "Spherical roller bearing" };
+  var ACCOUNT_KEY = "kgGreaseCalcAccount";
+
+  var state = {
+    bearing: null, method: "SKF general formula", results: null,
+    currentStep: 1, maxStepReached: 1, returnStep: 2,
+    account: null, mode: "guest"
+  };
+
+  function fmt(n, dec){ if (n === null || n === undefined || !isFinite(n)) return "—"; return n.toFixed(dec === undefined ? 2 : dec); }
+  function round2(n){ return Math.round(n*100 + (n>=0?1e-9:-1e-9)) / 100; }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+
+  try { var saved = localStorage.getItem(ACCOUNT_KEY); if (saved) state.account = JSON.parse(saved); } catch(e){}
+
+  // ---------- Bearing search combobox ----------
+  var input = document.getElementById("designationInput");
+  var list = document.getElementById("comboList");
+  var activeIndex = -1, currentMatches = [];
+
+  function renderMatches(query){
+    var q = query.trim().toUpperCase();
+    if (!q){ list.hidden = true; list.innerHTML=""; return; }
+    var matches = [];
+    for (var i=0; i<BEARINGS.length && matches.length < 60; i++){
+      if (BEARINGS[i][0].toUpperCase().indexOf(q) !== -1) matches.push(BEARINGS[i]);
+    }
+    currentMatches = matches; activeIndex = -1;
+    if (!matches.length){ list.innerHTML = '<div class="combo-empty">No designation matches “' + escapeHtml(query) + '”.</div>'; list.hidden = false; return; }
+    var html = "";
+    for (var j=0; j<matches.length; j++){
+      var r = matches[j];
+      html += '<div class="combo-row" data-idx="'+j+'"><span class="d">'+escapeHtml(r[0])+'</span><span class="meta">d'+r[2]+' D'+r[3]+' B'+r[4]+'</span></div>';
+    }
+    list.innerHTML = html; list.hidden = false;
+  }
+
+  function selectBearing(row){
+    state.bearing = { des: row[0], type: row[1], d: row[2], D: row[3], B: row[4], M: row[5] };
+    input.value = row[0]; list.hidden = true; recalc();
+  }
+
+  input.addEventListener("input", function(){ state.bearing = null; renderMatches(input.value); recalc(); });
+  input.addEventListener("focus", function(){ if (input.value) renderMatches(input.value); });
+  input.addEventListener("keydown", function(e){
+    if (list.hidden) return;
+    var rows = list.querySelectorAll(".combo-row");
+    if (e.key === "ArrowDown"){ e.preventDefault(); activeIndex = Math.min(activeIndex+1, rows.length-1); highlight(rows); }
+    else if (e.key === "ArrowUp"){ e.preventDefault(); activeIndex = Math.max(activeIndex-1, 0); highlight(rows); }
+    else if (e.key === "Enter"){ e.preventDefault(); if (activeIndex>=0 && currentMatches[activeIndex]) selectBearing(currentMatches[activeIndex]); }
+    else if (e.key === "Escape"){ list.hidden = true; }
+  });
+  function highlight(rows){ rows.forEach(function(r,i){ r.classList.toggle("active", i===activeIndex); }); if (activeIndex>=0) rows[activeIndex].scrollIntoView({block:"nearest"}); }
+  list.addEventListener("click", function(e){ var row = e.target.closest(".combo-row"); if (!row) return; var idx = parseInt(row.getAttribute("data-idx"), 10); if (currentMatches[idx]) selectBearing(currentMatches[idx]); });
+  document.addEventListener("click", function(e){ if (!e.target.closest(".combo")) list.hidden = true; });
+
+  // ---------- Method toggle ----------
+  var methodToggle = document.getElementById("methodToggle");
+  methodToggle.addEventListener("click", function(e){
+    var btn = e.target.closest("button"); if (!btn) return;
+    state.method = btn.getAttribute("data-method");
+    methodToggle.querySelectorAll("button").forEach(function(b){ b.classList.toggle("on", b===btn); });
+    recalc();
+  });
+
+  ["cageSelect","greaseSelect","housingSelect","fillInput","intervalInput","pctInput","referenceInput"].forEach(function(id){
+    var el = document.getElementById(id);
+    el.addEventListener("input", recalc); el.addEventListener("change", recalc);
+  });
+
+  function setBanner(kind, text){
+    var b = document.getElementById("banner");
+    b.className = "banner " + kind;
+    document.getElementById("bannerText").textContent = text;
+  }
+
+  // ---------- Calculation engine (verified against the KG workbook walkthrough) ----------
+  function recalc(){
+    var cage = document.getElementById("cageSelect").value;
+    var grease = document.getElementById("greaseSelect").value;
+    var housing = document.getElementById("housingSelect").value;
+    var fillPct = parseFloat(document.getElementById("fillInput").value) / 100;
+    var interval = parseFloat(document.getElementById("intervalInput").value);
+    var pct = parseFloat(document.getElementById("pctInput").value) / 100;
+    var b = state.bearing;
+
+    if (!input.value.trim()){
+      clearOutputs(); setBanner("warn", "Enter or select a bearing designation to begin.");
+      state.results = null; updateSnapshot(); return;
+    }
+    if (!b){
+      clearOutputs(); setBanner("danger", "Designation not found — choose one from the dropdown list.");
+      document.getElementById("outType").textContent = "Designation not found";
+      state.results = null; updateSnapshot(); return;
+    }
+
+    var typeName = TYPE_NAMES[b.type] || b.type;
+    document.getElementById("outType").textContent = typeName;
+    document.getElementById("outMass").textContent = fmt(b.M, 3);
+    document.getElementById("outD").textContent = fmt(b.d, 0);
+    document.getElementById("outDD").textContent = fmt(b.D, 0);
+    document.getElementById("outB").textContent = fmt(b.B, 0);
+
+    if (cage !== "Metallic cage"){ setBanner("warn", "WARNING: the KG free-volume formula is specified for bearings with a metallic cage. Results are not valid for " + cage.toLowerCase() + "s."); }
+    else if (b.D <= b.d){ setBanner("danger", "WARNING: outside diameter D must be greater than bore diameter d."); }
+    else if (b.d <= 0 || b.D <= 0 || b.B <= 0 || b.M <= 0){ setBanner("danger", "WARNING: d, D, B and M must be positive."); }
+
+    var V = null, factor = null, initialBearing = null, housingVol = null,
+        volPerSide = null, massPerSide = null, totalInitial = null, Gp = null, pctResult = null, finalQty = null;
+    var dimsOk = cage === "Metallic cage" && b.d > 0 && b.D > 0 && b.B > 0 && b.M > 0 && b.D > b.d;
+
+    if (dimsOk){
+      V = (Math.PI/4) * b.B * (b.D*b.D - b.d*b.d) * 1e-3 - b.M / (7.8e-3);
+      if (V < 0){ setBanner("danger", "WARNING: check bearing dimensions or bearing mass — computed free volume is negative."); V = null; }
+    }
+
+    if (V !== null){
+      factor = grease === "Standard grease" ? 0.9 : 2.0;
+      initialBearing = round2(V * factor);
+      housingVol = round2(V * 2);
+      volPerSide = round2(V * fillPct);
+      massPerSide = round2(V * fillPct * factor);
+      totalInitial = round2(initialBearing + massPerSide * 2);
+      Gp = round2(0.005 * b.D * b.B);
+      pctResult = round2(initialBearing * pct);
+      finalQty = state.method === "SKF general formula" ? Gp : pctResult;
+
+      if (cage === "Metallic cage" && b.D > b.d && b.d > 0 && b.D > 0 && b.B > 0 && b.M > 0){
+        if (housing === "SKF plummer block housing"){ setBanner("warn", "Plummer-block housing selected: SKF plummer blocks are typically only partly filled — confirm the filling percentage against the specific housing instructions rather than using 2 × V as-is."); }
+        else { setBanner("ok", "Inputs valid. Calculation is ready."); }
+      }
+    }
+
+    document.getElementById("outV").textContent = fmt(V);
+    document.getElementById("outFactor").textContent = fmt(factor, 1);
+    document.getElementById("outInitialBearing").textContent = fmt(initialBearing);
+    document.getElementById("outHousingVol").textContent = fmt(housingVol);
+    document.getElementById("outVolPerSide").textContent = fmt(volPerSide);
+    document.getElementById("outMassPerSide").textContent = fmt(massPerSide);
+    document.getElementById("outTotalInitial").textContent = fmt(totalInitial);
+    document.getElementById("outGp").textContent = fmt(Gp);
+    document.getElementById("outPctResult").textContent = fmt(pctResult);
+    document.getElementById("outFinalQty").textContent = fmt(finalQty);
+
+    var fillPctDisplay = isFinite(fillPct) ? (fillPct*100).toFixed(0) + "%" : "—";
+    var housingTotal = massPerSide !== null ? round2(massPerSide * 2) : null;
+    var reference = document.getElementById("referenceInput").value.trim();
+
+    document.getElementById("dBearing").textContent = b.des;
+    document.getElementById("reportFor").textContent = reference ? "Prepared for " + reference : "";
+    document.getElementById("dVolume").innerHTML = fmt(V) + "<small>cm³</small>";
+    document.getElementById("dInitial").innerHTML = fmt(initialBearing) + "<small>g</small>";
+    document.getElementById("dDrive").innerHTML = fmt(massPerSide) + "<small>g</small>";
+    document.getElementById("dNonDrive").innerHTML = fmt(massPerSide) + "<small>g</small>";
+    document.getElementById("dHousingTotal").innerHTML = fmt(housingTotal) + "<small>g</small>";
+    document.getElementById("dGrandTotal").innerHTML = fmt(totalInitial) + "<small>g</small>";
+    document.getElementById("dGp").innerHTML = fmt(Gp) + "<small>g</small>";
+    document.getElementById("dPct").innerHTML = fmt(pctResult) + "<small>g</small>";
+    document.getElementById("dFinal").innerHTML = fmt(finalQty) + "<small>g</small>";
+    document.getElementById("dFillPct").textContent = fillPctDisplay;
+    document.getElementById("dInterval").innerHTML = (isFinite(interval) ? interval : "—") + "<small>hours</small>";
+
+    state.results = (V === null) ? null : {
+      reference: reference, bearing: b, typeName: typeName, cage: cage, grease: grease, housing: housing,
+      fillPct: fillPct, interval: interval, pct: pct, method: state.method,
+      V: V, factor: factor, initialBearing: initialBearing, housingVol: housingVol,
+      volPerSide: volPerSide, massPerSide: massPerSide, housingTotal: housingTotal,
+      totalInitial: totalInitial, Gp: Gp, pctResult: pctResult, finalQty: finalQty
+    };
+    updateSnapshot();
+  }
+
+  function clearOutputs(){
+    ["outType","outMass","outD","outDD","outB","outV","outFactor","outInitialBearing","outHousingVol","outVolPerSide","outMassPerSide","outTotalInitial","outGp","outPctResult","outFinalQty"].forEach(function(id){ document.getElementById(id).textContent = "—"; });
+    document.getElementById("dBearing").textContent = "—"; document.getElementById("reportFor").textContent = "";
+    ["dVolume","dInitial","dDrive","dNonDrive","dHousingTotal","dGrandTotal","dGp","dPct","dFinal"].forEach(function(id){ document.getElementById(id).innerHTML = "—"; });
+    document.getElementById("dFillPct").textContent = "—"; document.getElementById("dInterval").textContent = "—";
+  }
+
+  // ---------- Sidebar snapshot + guest teaser ----------
+  function updateSnapshot(){
+    var b = state.bearing, r = state.results;
+    var guest = state.mode === "guest";
+    document.getElementById("snapBearing").textContent = b ? b.des : "—";
+    document.getElementById("snapType").textContent = b ? (TYPE_NAMES[b.type] || b.type) : "—";
+    document.getElementById("snapDims").textContent = b ? (b.d + " × " + b.D + " × " + b.B + " mm") : "—";
+
+    var rows = [["snapInitial", r ? fmt(r.initialBearing) + " g" : "—"],
+                ["snapTotal", r ? fmt(r.totalInitial) + " g" : "—"],
+                ["snapFinal", r ? fmt(r.finalQty) + " g" : "—"]];
+    rows.forEach(function(pair){
+      var el = document.getElementById(pair[0]);
+      el.textContent = pair[1];
+      el.classList.toggle("blurred", guest && !!r);
+    });
+    document.getElementById("snapCta").hidden = !(guest && r);
+
+    var teaser = document.getElementById("teaserRowStep2");
+    if (r){
+      teaser.innerHTML =
+        '<div class="teaser-tile"><div class="tt-label">Initial bearing grease</div><div class="tt-value">' + fmt(r.initialBearing) + ' g</div></div>' +
+        '<div class="teaser-tile"><div class="tt-label">Est. housing volume</div><div class="tt-value">' + fmt(r.housingVol) + ' cm³</div></div>';
+    } else {
+      teaser.innerHTML = '';
+    }
+  }
+
+  // ---------- Wizard navigation ----------
+  var steps = [1,2,3,4];
+  var stepperEl = document.getElementById("stepper");
+
+  function applyLockVisuals(){
+    var guest = state.mode === "guest";
+    [2,3,4].forEach(function(i){
+      var panel = document.getElementById("step-" + i);
+      panel.querySelector(".unlocked-content").hidden = guest;
+      panel.querySelector(".locked-content").hidden = !guest;
+    });
+    if (guest) state.maxStepReached = 4;
+    stepperEl.querySelectorAll(".step-tab").forEach(function(tab){
+      var i = parseInt(tab.getAttribute("data-step"), 10);
+      tab.classList.toggle("locked", guest && i > 1);
+    });
+  }
+
+  function goToStep(n){
+    if (n > state.maxStepReached) return;
+    state.currentStep = n;
+    steps.forEach(function(i){ document.getElementById("step-" + i).hidden = (i !== n); });
+    stepperEl.querySelectorAll(".step-tab").forEach(function(tab){
+      var i = parseInt(tab.getAttribute("data-step"), 10);
+      tab.classList.toggle("active", i === n);
+      tab.classList.toggle("done", i < n && state.mode !== "guest");
+      tab.disabled = i > state.maxStepReached;
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+  function advanceTo(n){ if (n > state.maxStepReached) state.maxStepReached = n; goToStep(n); }
+
+  document.getElementById("toStep2").addEventListener("click", function(){
+    if (!state.bearing){ setBanner("danger", "Select a bearing designation from the list before continuing."); input.focus(); return; }
+    advanceTo(2);
+  });
+  document.getElementById("backStep1").addEventListener("click", function(){ goToStep(1); });
+  document.getElementById("toStep3").addEventListener("click", function(){ advanceTo(3); });
+  document.getElementById("backStep2").addEventListener("click", function(){ goToStep(2); });
+  document.getElementById("toStep4").addEventListener("click", function(){ recalc(); advanceTo(4); });
+  document.getElementById("backStep3").addEventListener("click", function(){ goToStep(3); });
+
+  stepperEl.querySelectorAll(".step-tab").forEach(function(tab){
+    tab.addEventListener("click", function(){
+      var i = parseInt(tab.getAttribute("data-step"), 10);
+      if (i <= state.maxStepReached) goToStep(i);
+    });
+  });
+
+  document.addEventListener("click", function(e){
+    var cta = e.target.closest(".create-account-cta");
+    if (!cta) return;
+    state.returnStep = parseInt(cta.getAttribute("data-return-step"), 10) || 2;
+    location.hash = "signup";
+  });
+
+  // ---------- PDF report export ----------
+  var saveStatus = document.getElementById("saveStatus");
+  function setSaveStatus(kind, text){ saveStatus.className = "save-status" + (kind ? " " + kind : ""); saveStatus.textContent = text; }
+
+  function buildPdf(r){
+    var jsPDF = window.jspdf.jsPDF;
+    var doc = new jsPDF({ unit: "pt", format: "a4" });
+    var navy = [11, 31, 82]; var muted = [92, 107, 125];
+    var pageWidth = doc.internal.pageSize.getWidth();
+    var marginX = 40;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(17); doc.setTextColor(20, 30, 40);
+    doc.text("KG International — Grease Fill & Relubrication Report", marginX, 48);
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10); doc.setTextColor(muted[0], muted[1], muted[2]);
+    var today = new Date();
+    var dateStr = today.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
+    var who = state.account ? (state.account.name + (state.account.company ? " · " + state.account.company : "")) : "";
+    var subtitle = "Generated " + dateStr + (r.reference ? "  ·  Prepared for " + r.reference : "") + (who ? "  ·  " + who : "");
+    doc.text(subtitle, marginX, 66);
+
+    doc.setDrawColor(navy[0], navy[1], navy[2]); doc.setLineWidth(1.2);
+    doc.line(marginX, 76, pageWidth - marginX, 76);
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.setTextColor(navy[0], navy[1], navy[2]);
+    doc.text(r.bearing.des + "  ·  " + r.typeName, marginX, 98);
+
+    var headStyles = { fillColor: navy, textColor: 255, fontStyle: "bold", fontSize: 9.5 };
+    var bodyStyles = { fontSize: 9.5, textColor: [23, 34, 49] };
+    var altStyles = { fillColor: [238, 242, 248] };
+
+    doc.autoTable({
+      startY: 112, margin: { left: marginX, right: marginX },
+      head: [["Bearing & application inputs", "Value"]],
+      body: [
+        ["Bearing designation", r.bearing.des], ["Bearing type", r.typeName],
+        ["Bore diameter, d", r.bearing.d + " mm"], ["Outside diameter, D", r.bearing.D + " mm"],
+        ["Bearing width, B", r.bearing.B + " mm"], ["Bearing mass, M", r.bearing.M + " kg"],
+        ["Cage material", r.cage], ["Grease type", r.grease], ["Housing type", r.housing],
+        ["Housing free-space filling", (r.fillPct*100).toFixed(0) + " %"], ["Relubrication interval", r.interval + " hours"]
+      ],
+      headStyles: headStyles, bodyStyles: bodyStyles, alternateRowStyles: altStyles,
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" } }
+    });
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 14, margin: { left: marginX, right: marginX },
+      head: [["Initial fill & housing calculation", "Value"]],
+      body: [
+        ["Bearing free volume, V", fmt(r.V) + " cm³"], ["Grease density factor", fmt(r.factor, 1) + " g/cm³"],
+        ["Initial bearing grease", fmt(r.initialBearing) + " g"], ["Estimated total housing free volume", fmt(r.housingVol) + " cm³"],
+        ["Grease volume per housing side", fmt(r.volPerSide) + " cm³"], ["Grease mass per housing side", fmt(r.massPerSide) + " g"],
+        ["Total housing grease (both sides)", fmt(r.housingTotal) + " g"], ["Total initial grease requirement", fmt(r.totalInitial) + " g"]
+      ],
+      headStyles: headStyles, bodyStyles: bodyStyles, alternateRowStyles: altStyles,
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+      didParseCell: function(data){ if (data.row.index === 7 && data.section === "body") data.cell.styles.textColor = navy; }
+    });
+
+    doc.autoTable({
+      startY: doc.lastAutoTable.finalY + 14, margin: { left: marginX, right: marginX },
+      head: [["Relubrication", "Value"]],
+      body: [
+        ["SKF general formula, Gp = 0.005 × D × B", fmt(r.Gp) + " g"], ["Percentage of initial bearing fill used", (r.pct*100).toFixed(0) + " %"],
+        ["Percentage-based result", fmt(r.pctResult) + " g"], ["Recommendation method selected", r.method],
+        ["Selected final relubrication quantity", fmt(r.finalQty) + " g"], ["Relubrication interval", r.interval + " hours"]
+      ],
+      headStyles: headStyles, bodyStyles: bodyStyles, alternateRowStyles: altStyles,
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+      didParseCell: function(data){ if (data.row.index === 4 && data.section === "body") data.cell.styles.textColor = navy; }
+    });
+
+    var y = doc.lastAutoTable.finalY + 22;
+    if (y > doc.internal.pageSize.getHeight() - 160){ doc.addPage(); y = 50; }
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(20, 30, 40);
+    doc.text("Assumptions & engineering limitations", marginX, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(muted[0], muted[1], muted[2]);
+    var notes = [
+      "The free-volume equation shown is intended for bearings with a metallic cage.",
+      "For non-metallic cages, obtain bearing-specific guidance or internal free-volume data.",
+      "Housing grease quantities are estimates — actual housing cavity dimensions are not entered.",
+      "SKF plummer-block housings are generally only partly filled; follow the applicable housing instructions.",
+      "Relubrication quantity and interval depend on speed, temperature, contamination, sealing and operating conditions.",
+      "All outputs are approximate engineering estimates and should be verified before use."
+    ];
+    var ny = y + 14;
+    notes.forEach(function(line, i){
+      var wrapped = doc.splitTextToSize((i+1) + ". " + line, pageWidth - marginX*2);
+      doc.text(wrapped, marginX, ny); ny += wrapped.length * 11.5;
+    });
+
+    var pageCount = doc.internal.getNumberOfPages();
+    for (var p = 1; p <= pageCount; p++){
+      doc.setPage(p);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(muted[0], muted[1], muted[2]);
+      doc.text("KG International — prototype calculator, not a substitute for current SKF product data or application engineering review.", marginX, doc.internal.pageSize.getHeight() - 24);
+      doc.text(String(p) + " / " + pageCount, pageWidth - marginX, doc.internal.pageSize.getHeight() - 24, { align: "right" });
+    }
+    return doc;
+  }
+
+  document.getElementById("downloadPdf").addEventListener("click", function(){
+    recalc();
+    var r = state.results;
+    if (!r){ setSaveStatus("danger", "Fix the warnings above before generating the report."); return; }
+    setSaveStatus("", "Preparing PDF…");
+    var btn = this; btn.disabled = true;
+    Promise.resolve().then(function(){
+      var doc = buildPdf(r);
+      var blob = doc.output("blob");
+      var filename = "KG-Grease-Report-" + r.bearing.des.replace(/[^\w-]+/g, "_") + ".pdf";
+      logDownload(r, filename);
+
+      function downloadLocally(){
+        try {
+          doc.save(filename);
+          setSaveStatus("ok", "Report saved.");
+        } catch(e){
+          setSaveStatus("danger", "Could not trigger download.");
+        }
+      }
+
+      if (typeof claude !== "undefined" && claude.use){
+        claude.use("downloads").then(function(downloads){
+          if (downloads && downloads.save){
+            downloads.save({ filename: filename, data: blob }).then(function(res){
+              setSaveStatus("ok", res.status === "saved" ? "Report saved." : "Report sent.");
+            }, function(){
+              downloadLocally();
+            });
+          } else {
+            downloadLocally();
+          }
+        }).catch(function(){
+          downloadLocally();
+        });
+      } else {
+        downloadLocally();
+      }
+    }).catch(function(){ setSaveStatus("danger", "Something went wrong building the PDF."); })
+      .then(function(){ btn.disabled = false; });
+  });
+
+  // ---------- Leads & downloads storage (localStorage with sample data fallback) ----------
+  var LEADS_STORAGE_KEY = "kg_leads_v2";
+  var DOWNLOADS_STORAGE_KEY = "kg_downloads_v2";
+  var SEED_LEADS = [
+    { name: "Vikram Mehta", company: "Emirates Steel Arkan", industry: "Metals & Heavy Industry", country: "United Arab Emirates", email: "v.mehta@emiratessteel.ae", createdAt: Date.now() - 86400000 * 2, sample: true },
+    { name: "Carlos Mendez", company: "Cemex Industrial", industry: "Mining & Cement", country: "Mexico", email: "c.mendez@cemex.com", createdAt: Date.now() - 86400000 * 4, sample: true },
+    { name: "Rajiv Sharma", company: "Tata Power Renewables", industry: "Power Generation", country: "India", email: "rajiv.s@tatapower.com", createdAt: Date.now() - 86400000 * 7, sample: true },
+    { name: "Klaus Becker", company: "Thyssenkrupp Industrial Solutions", industry: "Industrial Machinery", country: "Germany", email: "k.becker@thyssen.de", createdAt: Date.now() - 86400000 * 11, sample: true }
+  ];
+  var SEED_DOWNLOADS = [
+    { bearing: "22320 EK", leadName: "Vikram Mehta", company: "Emirates Steel Arkan", finalQty: 38.4, totalInitial: 128.0, createdAt: Date.now() - 86400000 * 2, sample: true },
+    { bearing: "22216 E", leadName: "Carlos Mendez", company: "Cemex Industrial", finalQty: 14.2, totalInitial: 47.3, createdAt: Date.now() - 86400000 * 4, sample: true },
+    { bearing: "6310-2RS1", leadName: "Rajiv Sharma", company: "Tata Power Renewables", finalQty: 4.6, totalInitial: 15.3, createdAt: Date.now() - 86400000 * 7, sample: true },
+    { bearing: "22320 EK", leadName: "Klaus Becker", company: "Thyssenkrupp Industrial Solutions", finalQty: 38.4, totalInitial: 128.0, createdAt: Date.now() - 86400000 * 11, sample: true }
+  ];
+
+  function getStoredLeads(){
+    try {
+      var raw = localStorage.getItem(LEADS_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return SEED_LEADS.slice();
+  }
+  function getStoredDownloads(){
+    try {
+      var raw = localStorage.getItem(DOWNLOADS_STORAGE_KEY);
+      if (raw) return JSON.parse(raw);
+    } catch(e){}
+    return SEED_DOWNLOADS.slice();
+  }
+
+  function logLead(account){
+    try {
+      var list = getStoredLeads();
+      list.unshift({
+        name: account.name, email: account.email, company: account.company,
+        jobTitle: account.jobTitle || "", phone: account.phone || "", country: account.country || "",
+        industry: account.industry || "", createdAt: Date.now()
+      });
+      localStorage.setItem(LEADS_STORAGE_KEY, JSON.stringify(list));
+    } catch(e){}
+    if (typeof claude !== "undefined" && claude.use){
+      claude.use("db").then(function(db){
+        if (!db) return;
+        db.collection("leads").add({
+          name: account.name, email: account.email, company: account.company,
+          jobTitle: account.jobTitle || "", phone: account.phone || "", country: account.country || "",
+          industry: account.industry || "", createdAt: Date.now()
+        }).catch(function(){});
+      }).catch(function(){});
+    }
+  }
+
+  function logDownload(r, filename){
+    var acct = state.account || {};
+    try {
+      var list = getStoredDownloads();
+      list.unshift({
+        bearing: (r.bearing && r.bearing.des) || "22320 EK", leadName: acct.name || "Guest User", leadEmail: acct.email || "", company: acct.company || "Independent",
+        finalQty: r.finalQty, totalInitial: r.totalInitial, filename: filename, createdAt: Date.now()
+      });
+      localStorage.setItem(DOWNLOADS_STORAGE_KEY, JSON.stringify(list));
+    } catch(e){}
+    if (typeof claude !== "undefined" && claude.use){
+      claude.use("db").then(function(db){
+        if (!db) return;
+        db.collection("downloads").add({
+          bearing: (r.bearing && r.bearing.des) || "22320 EK", leadName: acct.name || "", leadEmail: acct.email || "", company: acct.company || "",
+          finalQty: r.finalQty, totalInitial: r.totalInitial, filename: filename, createdAt: Date.now()
+        }).catch(function(){});
+      }).catch(function(){});
+    }
+  }
+
+  // ---------- Account / signup ----------
+  function saveAccount(account){
+    state.account = account;
+    try { localStorage.setItem(ACCOUNT_KEY, JSON.stringify(account)); } catch(e){}
+    logLead(account);
+  }
+  function clearAccount(){
+    state.account = null;
+    try { localStorage.removeItem(ACCOUNT_KEY); } catch(e){}
+  }
+
+  document.getElementById("signupForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var errBox = document.getElementById("signupError");
+    var name = document.getElementById("leadName").value.trim();
+    var email = document.getElementById("leadEmail").value.trim();
+    var company = document.getElementById("leadCompany").value.trim();
+    var industry = document.getElementById("leadIndustry").value;
+    var consent = document.getElementById("leadConsent").checked;
+    if (!name || !email || !company || !industry || !consent){
+      errBox.hidden = false; errBox.querySelector("span:last-child").textContent = "Please fill in all required fields and accept the contact consent.";
+      return;
+    }
+    errBox.hidden = true;
+    var account = {
+      name: name, email: email, company: company,
+      jobTitle: document.getElementById("leadTitle").value.trim(),
+      phone: document.getElementById("leadPhone").value.trim(),
+      country: document.getElementById("leadCountry").value.trim(),
+      industry: industry
+    };
+    saveAccount(account);
+    document.getElementById("referenceField").hidden = false;
+    location.hash = "app";
+    requestAnimationFrame(function(){ advanceTo(Math.max(state.returnStep, 2)); });
+  });
+
+  // ---------- Admin ----------
+  var adminUnsubs = [];
+  function teardownAdmin(){ adminUnsubs.forEach(function(fn){ try{ fn(); }catch(e){} }); adminUnsubs = []; }
+
+  function renderAdmin(){
+    var gate = document.getElementById("adminGate");
+    var content = document.getElementById("adminContent");
+    if (gate) gate.hidden = true;
+    if (content) content.hidden = false;
+
+    var leads = getStoredLeads();
+    var downloads = getStoredDownloads();
+
+    function renderTables(){
+      var lb = document.querySelector("#leadsTable tbody");
+      if (lb){
+        lb.innerHTML = leads.map(function(l){
+          return "<tr><td>" + escapeHtml(l.name||"") + (l.sample?'<span class="sample-tag">SAMPLE</span>':"") + "</td><td>" + escapeHtml(l.company||"") + "</td><td>" + escapeHtml(l.industry||"") + "</td><td>" + escapeHtml(l.country||"") + "</td><td>" + escapeHtml(l.email||"") + "</td><td>" + (l.createdAt ? new Date(l.createdAt).toLocaleDateString() : "") + "</td></tr>";
+        }).join("") || "<tr><td colspan=6 style='color:var(--muted)'>No signups yet.</td></tr>";
+      }
+
+      var db2 = document.querySelector("#downloadsTable tbody");
+      if (db2){
+        db2.innerHTML = downloads.map(function(d){
+          return "<tr><td>" + escapeHtml(d.bearing||"") + (d.sample?'<span class="sample-tag">SAMPLE</span>':"") + "</td><td>" + escapeHtml(d.leadName||"") + "</td><td>" + escapeHtml(d.company||"") + "</td><td>" + fmt(d.finalQty) + " g</td><td>" + fmt(d.totalInitial) + " g</td><td>" + (d.createdAt ? new Date(d.createdAt).toLocaleDateString() : "") + "</td></tr>";
+        }).join("") || "<tr><td colspan=6 style='color:var(--muted)'>No downloads yet.</td></tr>";
+      }
+
+      var ml = document.getElementById("metricLeads");
+      var md = document.getElementById("metricDownloads");
+      var mc = document.getElementById("metricConversion");
+      var mb = document.getElementById("metricTopBearing");
+      if (ml) ml.textContent = leads.length;
+      if (md) md.textContent = downloads.length;
+      if (mc) mc.textContent = leads.length ? Math.round(downloads.length / leads.length * 100) + "%" : "—";
+      var counts = {};
+      downloads.forEach(function(d){ if (d.bearing) counts[d.bearing] = (counts[d.bearing]||0) + 1; });
+      var top = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })[0];
+      if (mb) mb.textContent = top || "—";
+    }
+
+    renderTables();
+
+    if (typeof claude !== "undefined" && claude.use){
+      claude.use("db").then(function(db){
+        if (!db) return;
+        adminUnsubs.push(db.collection("leads").orderBy("createdAt","desc").limit(100).onSnapshot(function(snap){
+          if (snap && snap.docs && snap.docs.length){
+            leads = snap.docs.map(function(d){ return d.data(); });
+            renderTables();
+          }
+        }, function(){}));
+        adminUnsubs.push(db.collection("downloads").orderBy("createdAt","desc").limit(100).onSnapshot(function(snap){
+          if (snap && snap.docs && snap.docs.length){
+            downloads = snap.docs.map(function(d){ return d.data(); });
+            renderTables();
+          }
+        }, function(){}));
+      }).catch(function(){});
+    }
+  }
+
+  // ---------- Header / account bar ----------
+  function initials(name){ return (name||"").split(/\s+/).filter(Boolean).slice(0,2).map(function(w){ return w[0].toUpperCase(); }).join(""); }
+
+  function renderHeader(){
+    var box = document.getElementById("headerActions");
+    if (state.mode === "admin"){
+      box.innerHTML = '<span class="badge admin">Admin</span><button type="button" class="btn ghost sm" id="hdrExit">Exit admin</button>';
+      document.getElementById("hdrExit").addEventListener("click", function(){ location.hash = state.account ? "app" : "guest"; });
+      return;
+    }
+    if (state.account){
+      box.innerHTML =
+        '<div class="acct-pill"><div class="acct-avatar">' + escapeHtml(initials(state.account.name) || "U") + '</div>' +
+        '<div class="acct-meta"><b>' + escapeHtml(state.account.name) + '</b><span>' + escapeHtml(state.account.company||"") + '</span></div></div>' +
+        '<button type="button" class="btn ghost sm" id="hdrSignOut">Sign out</button>';
+      document.getElementById("hdrSignOut").addEventListener("click", function(){ clearAccount(); location.hash = "guest"; });
+    } else {
+      box.innerHTML = '<button type="button" class="btn primary sm" id="hdrCreate">Create free account</button>';
+      document.getElementById("hdrCreate").addEventListener("click", function(){ state.returnStep = 2; location.hash = "signup"; });
+    }
+  }
+
+  // ---------- Mode / router ----------
+  function setMode(m){
+    if (m === "app" && !state.account){ location.hash = "signup"; return; }
+    teardownAdmin();
+    state.mode = m;
+    document.getElementById("presenterMode").textContent = m;
+
+    document.getElementById("heroGuest").hidden = (m !== "guest");
+    document.getElementById("wizardArea").hidden = (m === "signup" || m === "admin");
+    document.getElementById("signupArea").hidden = (m !== "signup");
+    document.getElementById("adminArea").hidden = (m !== "admin");
+    document.getElementById("referenceField").hidden = (m !== "app");
+
+    applyLockVisuals();
+    if (m !== "signup" && m !== "admin") goToStep(state.currentStep || 1);
+    if (m === "admin") renderAdmin();
+    renderHeader();
+    updateSnapshot();
+    window.scrollTo({ top: 0 });
+  }
+
+  function routeFromHash(){
+    var h = (location.hash || "").replace("#","") || (state.account ? "app" : "guest");
+    if (["guest","signup","app","admin"].indexOf(h) === -1) h = "guest";
+    setMode(h);
+  }
+  window.addEventListener("hashchange", routeFromHash);
+
+  document.getElementById("heroCtaStart").addEventListener("click", function(){
+    document.getElementById("step-1").scrollIntoView({ behavior: "smooth" });
+    input.focus();
+  });
+  document.getElementById("heroCtaSample").addEventListener("click", function(){
+    document.getElementById("step-2").scrollIntoView({ behavior: "smooth" });
+  });
+
+  // ---------- Presenter / demo switcher ----------
+  var presenterToggle = document.getElementById("presenterToggle");
+  var presenterPanel = document.getElementById("presenterPanel");
+  presenterToggle.addEventListener("click", function(){ presenterPanel.hidden = !presenterPanel.hidden; });
+  document.getElementById("presGuest").addEventListener("click", function(){ location.hash = "guest"; });
+  document.getElementById("presApp").addEventListener("click", function(){
+    if (!state.account){ saveAccount({ name: "Demo User", email: "demo@example.com", company: "Demo Company", jobTitle: "Maintenance Engineer", phone: "", country: "United Arab Emirates", industry: "Industrial / manufacturing" }); }
+    location.hash = "app";
+  });
+  document.getElementById("presAdmin").addEventListener("click", function(){ location.hash = "admin"; });
+  document.getElementById("presReset").addEventListener("click", function(){ clearAccount(); location.hash = "guest"; location.reload(); });
+
+  // ---------- Boot with a realistic worked example ----------
+  function boot(){
+    for (var i=0;i<BEARINGS.length;i++){
+      if (BEARINGS[i][0] === "22320 EK"){ state.bearing = { des: BEARINGS[i][0], type: BEARINGS[i][1], d: BEARINGS[i][2], D: BEARINGS[i][3], B: BEARINGS[i][4], M: BEARINGS[i][5] }; input.value = BEARINGS[i][0]; break; }
+    }
+    routeFromHash();
+    recalc();
+  }
+  boot();
+})();
+</script>
+
+</body></html>
